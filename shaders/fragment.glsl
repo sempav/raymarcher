@@ -107,18 +107,11 @@ float menger(in vec3 p)
 
 float DistanceField(in vec3 p)
 {
-    vec3 rem = mod(p, 3);
     vec3 row = round((p - 1.5) / 3);
-    //vec3 row = p - 1.5 - rem;
     vec3 q = vec3(mod(p.xy, 3.0) - 1.5, p.z);
-    //return sdCylinder(vec3(q.x, q.y, p.z),
-    //                  vec3(1.0, 1.0, 0.1));
     float sgn = -1.0 + 2.0 * int(mod(row.y + row.x, 2) == 1);
     float h = 0.05 + 0.3 * pow(sin(1.57 * elapsed_time + sgn * p.z / 3.14), 64);
     return infCylinderZ(q, h);
-    //return sdBox(mod(p, 3.0) - 1.5,
-    //             vec3(1.0 * pow(sin(1.57 * elapsed_time + row.x), 2)));
-    //return menger(p);
 }
 
 vec3 GetIntersect(in vec3 ro, in vec3 rd, in float mint, in float maxt, out float occl)
@@ -174,26 +167,17 @@ void main(void)
         gl_FragColor = vec4(0);
         return;
     }
+
     normal = point_normal(point);
-    //vec3 light = vec3(2.5  + 5 * cos(0.5 * 3.14 * elapsed_time),
-    //                  2,
-    //                  2.5 + 5 * sin(0.5 * 3.14 * elapsed_time));
-    //vec3 light = vec3( 3 * cos(0.5 * 3.14 * elapsed_time),
-    //                   3 * sin(0.5 * 3.14 * elapsed_time),
-    //                  -2);
     vec3  light = camera_pos;
     vec3  light_dir = normalize(light - point);
     float dotp_diffuse = dot(light_dir, normal);
-    vec3 rem = mod(point, 3) - 1.5;
+
     float row = round((point.x - 1.5) / 3);
-    //vec3 color = vec3(1 - 0.8 * pow(sin(1.57 * elapsed_time + row.x), 2));
-    //float red = abs(row.x - introw);
-    //int red = int(mod(row, 2));
-    int red = int(sin(1.57 * elapsed_time + row) > 1-15e-2);
-    red = max(red, int(sin(1.57 * elapsed_time + 1 + row) > 1-15e-2));
+    int red = int(sin(1.57 * elapsed_time + row) > 1 - 15e-2);
+    red = max(red, int(sin(1.57 * elapsed_time + 1 + row) > 1 - 15e-2));
     vec3 color = vec3(1 - 0.8 * red);
     color.x = 1.0;
-    //color = mod(point, 1);
-    gl_FragColor = vec4(color * vec3((1.0 - occl) * dotp_diffuse), 1) *
-        1;//shadow(point, normalize(light - point), 0.01, length(light - point), 8);
+
+    gl_FragColor = vec4(color * vec3((1.0 - occl) * dotp_diffuse), 1);
 }
