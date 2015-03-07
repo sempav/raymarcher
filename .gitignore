@@ -1,4 +1,6 @@
+*.d
 *.o
 *.log
+main
 # until I update the Makefile
 *.depend
