@@ -16,6 +16,7 @@ all: main
 
 main: $(OBJECTS)
 	$(CXX) $(LDFLAGS) $(OBJECTS) $(LOADLIBES) $(LDLIBS) -o $(TARGET)
+	@mkdir log
 
 depend: .depend
 
