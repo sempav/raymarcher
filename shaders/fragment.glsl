@@ -1,6 +1,7 @@
-#version 120
+#version 130
 
-#define eps 1e-5
+#define eps 1e-4
+#define min_step 5e-4
 
 uniform vec3 camera_pos;
 uniform vec3 camera_dir;
@@ -62,9 +63,19 @@ float sdCross(in vec3 p)
     return min(da,min(db,dc));
 }
 
-float plane(vec3 p, float h)
+float sdPlane(vec3 p, float h)
 {
     return p.y - h;
+}
+
+float udPlane(vec3 p, float h)
+{
+    return abs(p.y - h);
+}
+
+float sdPlaneGeneral(vec3 p, vec3 a)
+{
+    return dot(p, normalize(a));
 }
 
 vec3 rotate(vec3 p, float ang)
@@ -81,22 +92,12 @@ float smin( float a, float b, float k )
     return mix(b, a, h) - k * h * (1.0 - h);
 }
 
-float mesh(in vec3 p)
-{
-    if (sdBox(p, vec3(3.0)) > 0) {
-        return udBox(p, vec3(2.8));
-    } 
-    float mult = 3.0;
-    vec3 modp = mod(p * mult + vec3(0.5), 1.0) - 0.5;
-    return max(sdBox(modp, vec3(1.0)), -sdCross(1.01 * modp) / 1.01) / mult;
-}
-
 float menger(in vec3 p)
 {
     float d = sdBox(p, vec3(1.0));
     d = max(d, -sdCross(3.0 * p) / 3.0);
     float mult = 1.0;
-    for (int iter = 1; iter < 5; ++iter) {
+    for (int iter = 1; iter < 4; ++iter) {
         mult *= 3.0;
         vec3 modp = mod(mult * p + vec3(0.5), 1.0) - 0.5;
         float c = sdCross(3.0 * modp) / 3.0;
@@ -107,22 +108,46 @@ float menger(in vec3 p)
 
 float DistanceField(in vec3 p)
 {
-    vec3 row = round((p - 1.5) / 3);
-    vec3 q = vec3(mod(p.xy, 3.0) - 1.5, p.z);
-    float sgn = -1.0 + 2.0 * int(mod(row.y + row.x, 2) == 1);
-    float h = 0.05 + 0.3 * pow(sin(1.57 * elapsed_time + sgn * p.z / 3.14), 64);
-    return infCylinderZ(q, h);
+    //return sphere(mod(p, 3.0) - 1.5, 0.3);
+    //return min(sphere(p, 1.0), sdPlane(p, -2.0));
+    float ang = atan(p.z, p.x);
+    float rad = sqrt(p.x * p.x + p.z * p.z);
+    float delta_phi = (2 * 3.14159) / 8;
+    //obj to the left
+    float obj_phi = floor(ang/delta_phi) * delta_phi;
+    float obj_rad = 3.0;
+    vec3 obj = vec3(obj_rad * cos(obj_phi),
+                    cos(obj_phi),
+                    obj_rad * sin(obj_phi));
+    float d = sphere(p - obj, (1.0));
+    //obj to the right
+    obj_phi = ceil(ang/delta_phi) * delta_phi;
+    obj = vec3(obj_rad * cos(obj_phi),
+               cos(obj_phi),
+               obj_rad * sin(obj_phi));
+    d = min(d, sphere(p - obj, (1.0)));
+
+    d = min(d, sdPlane(p, -5.0));
+    d = min(d, menger(p));
+    return d;
 }
 
 vec3 GetIntersect(in vec3 ro, in vec3 rd, in float mint, in float maxt, out float occl)
 {
     float h;
     occl = 0.0;
+    int ret_flag = 0;
+    vec3 ret_val = vec3(0.0f);
     for (float t = mint; t < maxt; ) {
         h = DistanceField(ro + t * rd);
+
         if (h < eps) {
             return ro + t * rd;
         }
+
+        //ret_flag = (1 - ret_flag) * int(sign(1 + sign(eps - h)));
+        //ret_val = (1 - ret_flag) * ret_val + ret_flag * (ro + t * rd);
+
         t += h;
         occl += 1.0 / (maxt - mint);
     }
@@ -131,7 +156,7 @@ vec3 GetIntersect(in vec3 ro, in vec3 rd, in float mint, in float maxt, out floa
 
 vec3 point_normal(in vec3 p)
 {
-#define NORMAL_EPS 1e-5
+#define NORMAL_EPS 1e-4
     float d = DistanceField(p);
     return normalize(vec3(DistanceField(p + vec3(NORMAL_EPS, 0, 0)) - d,
                           DistanceField(p + vec3(0, NORMAL_EPS, 0)) - d,
@@ -153,6 +178,46 @@ float shadow(in vec3 ro, in vec3 rd, float mint, float maxt, float k)
     return res;
 }
 
+float norclamp(float x, float l, float h)
+{
+    return (clamp(x, l, h) - l) / (h - l);
+}
+
+//  L 0 1 2 H
+// r 0 0 / 1
+// g / 1 1 \
+// b 1 \ 0 0
+vec3 heatmap_color4(float val, float lo, float hi)
+{
+    if (val > hi || val < lo) {
+        return vec3(1.0, 0.0, 1.0);
+    }
+    val = clamp(val, lo, hi);
+    float m[3];
+    for (int i = 0; i < 3; ++i) {
+        m[i] = ((3 - i) * lo + (1 + i) * hi) / 4;
+    }
+
+    float b = 1.0 - norclamp(val, m[0], m[1]);
+    float g = norclamp(val,   lo, m[0]) * (1.0 - norclamp(val, m[2],   hi));
+    float r = norclamp(val, m[1], m[2]);
+    vec3 col = vec3(r, g, b);
+    return col;
+    if (b == 1.0) {
+        return vec3(1.0, 0.0, 1.0);
+    }
+
+    float speed = 1.5;
+    float t = speed * mod(elapsed_time, 3.0 / speed);
+    if (t < 1.0) {
+        return vec3(col.r);
+    } else if (t < 2.0) {
+        return vec3(col.g);
+    } else {
+        return vec3(col.b);
+    }
+}
+
 void main(void) 
 {
     vec3 point, normal;
@@ -162,22 +227,42 @@ void main(void)
     ray_orig = camera_pos;
 
     float occl;
-    point = GetIntersect(ray_orig, ray_dir, 0.01, 100, occl);
-    if (point == vec3(0)) {
-        gl_FragColor = vec4(0);
-        return;
+    point = GetIntersect(ray_orig, ray_dir, 0.01, 1000, occl);
+    gl_FragColor = vec4(0);
+
+    if (point != vec3(0)) {
+
+        normal = point_normal(point);
+        vec3  light = camera_pos;
+        vec3  light_dir = normalize(light - point);
+        float dotp_diffuse = clamp(dot(light_dir, normal), 0, 1);
+
+        // first reflection
+        vec3 refl_color = vec3(0.0);
+        vec3 new_dir = reflect(ray_dir, normal);
+        vec3 new_point = GetIntersect(point, new_dir, 0.01, 80, occl);
+        if (new_point != vec3(0)) {
+            vec3 new_normal = point_normal(new_point);
+            vec3 new_light_dir = normalize(light - new_point);
+            float new_diffuse = clamp(dot(new_light_dir, new_normal), 0, 1);
+
+            // second reflection
+            vec3 snd_refl_color = vec3(0.0);
+            vec3 snd_dir = reflect(new_dir, new_normal);
+            vec3 snd_point = GetIntersect(new_point, snd_dir, 0.01, 30, occl);
+            if (snd_point != vec3(0)) {
+                vec3 snd_normal = point_normal(snd_point);
+                vec3 snd_light_dir = normalize(light - snd_point);
+                float snd_diffuse = clamp(dot(snd_light_dir, snd_normal), 0, 1);
+                snd_refl_color = vec3(0.8 * snd_diffuse);
+            }
+
+            refl_color = vec3(0.5 * 0.8) + 0.5 * snd_refl_color;
+            refl_color *= new_diffuse;
+        }
+
+        vec3 color = vec3(0.5 * 0.8) + 0.5 * refl_color;
+
+        gl_FragColor = vec4(color * vec3(dotp_diffuse), 1);
     }
-
-    normal = point_normal(point);
-    vec3  light = camera_pos;
-    vec3  light_dir = normalize(light - point);
-    float dotp_diffuse = dot(light_dir, normal);
-
-    float row = round((point.x - 1.5) / 3);
-    int red = int(sin(1.57 * elapsed_time + row) > 1 - 15e-2);
-    red = max(red, int(sin(1.57 * elapsed_time + 1 + row) > 1 - 15e-2));
-    vec3 color = vec3(1 - 0.8 * red);
-    color.x = 1.0;
-
-    gl_FragColor = vec4(color * vec3((1.0 - occl) * dotp_diffuse), 1);
 }
