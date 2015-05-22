@@ -166,6 +166,12 @@ bool GLProgram::Link()
 	glAttachShader(program, vertex->GetId());
 	glAttachShader(program, fragment->GetId());
 	glLinkProgram(program);
+
+    // shader don't get deleted before they're detached
+    // so it's best to detach them as soon as possible
+    glDetachShader(program, vertex->GetId());
+    glDetachShader(program, fragment->GetId());
+
 	GLint link_ok = GL_FALSE;
 	glGetProgramiv(program, GL_LINK_STATUS, &link_ok);
 	if (link_ok == GL_FALSE) {
