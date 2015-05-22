@@ -95,13 +95,19 @@ float smin( float a, float b, float k )
 float menger(in vec3 p)
 {
     float d = sdBox(p, vec3(1.0));
+    if (d > 0.1) {
+        return d;
+    }
     d = max(d, -sdCross(3.0 * p) / 3.0);
     float mult = 1.0;
-    for (int iter = 1; iter < 4; ++iter) {
+    for (int iter = 1; iter < 5; ++iter) {
         mult *= 3.0;
         vec3 modp = mod(mult * p + vec3(0.5), 1.0) - 0.5;
         float c = sdCross(3.0 * modp) / 3.0;
         d = max(d, -c / mult);
+        if (d * mult > 0.1) {
+            return d;
+        }
     }
     return d;
 }
