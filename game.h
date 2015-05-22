@@ -22,7 +22,7 @@ class Game
 	float last_render_time;
 	bool init_ok;
 
-	GLProgram *program;
+    std::unique_ptr<GLProgram> program;
 
 	Quad *quad;
 

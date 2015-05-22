@@ -1,16 +1,17 @@
 #pragma once
 
+#include "camera.h"
 #include "defines.h"
 #include "logger.h"
+#include "preprocessor.h"
 
-#include "camera.h"
+#include <memory>
 
 class GLShader
 {
 protected:
     GLuint shader;
     GLenum type;
-    bool active;
 public:
     GLShader(GLenum type);
     GLShader(const char *filename, GLenum type);
@@ -20,7 +21,6 @@ public:
     bool Load(const char *source);
 
     GLuint GetId()  { return shader; }
-    bool IsActive() { return active; }
 };
 
 class GLProgram
@@ -30,8 +30,8 @@ protected:
     bool active;
     int cnt_lights;
 
-    GLShader *vertex;
-    GLShader *fragment;
+    std::unique_ptr<GLShader> vertex;
+    std::unique_ptr<GLShader> fragment;
 
     GLProgram(const GLProgram &a) = delete;
     GLProgram &operator= (const GLProgram &a) = delete;
@@ -39,10 +39,11 @@ public:
     GLProgram(void);
     ~GLProgram(void);
 
-    bool LoadVertexShader(const char *filename);
-    bool LoadFragmentShader(const char *filename);
-    void UnloadVertexShader();
-    void UnloadFragmentShader();
+    bool LoadVertexShader(GLShader *vertex);
+    bool LoadFragmentShader(GLShader *fragment);
+
+    void UnloadVertexShader()   { vertex.reset();   }
+    void UnloadFragmentShader() { fragment.reset(); }
 
     bool Link();
     void Use();
@@ -64,8 +65,4 @@ public:
     bool SetUniformMat4(const char *name, GLsizei count, GLboolean transpose, const GLfloat *value);
 
     void SetCamera(const Camera &camera);
-
-    GLShader* GetVertexShader()   const { return vertex;   }
-    GLShader* GetFragmentShader() const { return fragment; }
-    bool IsActive()               const { return active;   }
 };

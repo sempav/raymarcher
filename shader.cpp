@@ -4,7 +4,6 @@ GLShader::GLShader(GLenum type)
 {
 	shader = 0;
 	this->type = type;
-	active = false;
 }
 
 GLShader::GLShader(const char *filename, GLenum type)
@@ -15,13 +14,12 @@ GLShader::GLShader(const char *filename, GLenum type)
 
 GLShader::~GLShader(void) 
 {
-	if (active)
-		glDeleteShader(shader);
+    // a value of 0 for shader will be silently ignored
+    glDeleteShader(shader);
 }
 
 bool GLShader::LoadFromFile(const char *filename) 
 {
-	active = false;
 	FILE* input = fopen(filename, "rb");
 	if (!input || fseek(input, 0, SEEK_END) == -1) {
         fclose(input);
@@ -55,11 +53,15 @@ bool GLShader::LoadFromFile(const char *filename)
 
 bool GLShader::Load(const char *source)
 {
-	active = false;
-	if (source == NULL) {
+    if (shader) {
+        throw std::runtime_error("tried to reload shader source");
+    }
+
+	if (source == nullptr) {
 		logger.Write("Error: shader source not specified.\n");
 		return 0;
 	}
+
 	shader = glCreateShader(type);
 	glShaderSource(shader, 1, &source, NULL);
 	glCompileShader(shader);
@@ -69,13 +71,14 @@ bool GLShader::Load(const char *source)
 		logger.Write("Failed to compile shader.\n");
 		logger.LogShaderInfo(shader);
 		glDeleteShader(shader);
+        throw std::runtime_error("failed to compile shader");
 		return 0;
 	}
-	active = true;
+
 	return 1;
 }
 
-GLProgram::GLProgram(void) : active(false), cnt_lights(0), vertex(NULL), fragment(NULL)
+GLProgram::GLProgram(void) : active(false), cnt_lights(0), vertex(), fragment()
 { }
 
 GLProgram::~GLProgram(void)
@@ -84,87 +87,33 @@ GLProgram::~GLProgram(void)
 	UnloadFragmentShader();
 }
 
-bool GLProgram::LoadVertexShader(const char *filename)
+bool GLProgram::LoadVertexShader(GLShader *v)
 {
-	if (vertex) {
-		logger.Write("Error: vertex shader must be nullified before loading a new one.\n");
-		return false;
-	}
-	vertex = new (std::nothrow) GLShader(filename, GL_VERTEX_SHADER);	
-	if (!vertex) {
-		logger.Write("Failed to allocate memory for vertex shader.\n");
-		return false;
-	}
-	if (!vertex->IsActive()) {
-		logger.Write("Failed to load vertex shader.\n");
-		delete vertex;
-		vertex = NULL;
-		return false;
-	}
+    vertex.reset(v);
 	return true;
 }
 
-bool GLProgram::LoadFragmentShader(const char *filename)
+bool GLProgram::LoadFragmentShader(GLShader *f)
 {
-	if (fragment) {
-		logger.Write("Error: fragment shader must be nullified before loading a new one.\n");
-		return false;
-	}
-	fragment = new (std::nothrow) GLShader(filename, GL_FRAGMENT_SHADER);
-	if (!fragment) {
-		logger.Write("Failed to allocate memory for fragment shader.\n");
-		return false;
-	}
-	if (!fragment->IsActive()) {
-		logger.Write("Failed to load fragment shader.\n");
-		delete fragment;
-		fragment = NULL;
-		return false;
-	}
+    fragment.reset(f);
 	return true;
-}
-
-void GLProgram::UnloadVertexShader()
-{
-	if (!vertex) {
-		logger.Write("Warning: trying to unload an empty vertex shader.\n");
-		return;
-	}
-	if (!vertex->IsActive()) {
-		logger.Write("Error: trying to unload a corrupt vertex shader.\n");
-    }
-	delete vertex;
-}
-
-void GLProgram::UnloadFragmentShader()
-{
-	if (!fragment) {
-		logger.Write("Warning: trying to unload an empty fragment shader.\n");
-		return;
-	}
-	if (!fragment->IsActive()) {
-		logger.Write("Error: trying to unload a corrupt fragment shader.\n");
-    }
-	delete fragment;
 }
 
 bool GLProgram::Link()
 {
 	logger.Write("Linking program...\n");
-	active = false;
+
 	if (!vertex || !fragment) {
-		if (!vertex) logger.Write("Error: vertex shader not specified.\n");
+		if (!vertex)   logger.Write("Error: vertex shader not specified.\n");
 		if (!fragment) logger.Write("Error: fragment shader not specified.\n");
+        logger.Write("Aborting linking.\n");
 		return 0;
 	}
-	if (!vertex->IsActive() || !fragment->IsActive()) {
-		if (!vertex->IsActive()) logger.Write("Error: vertex shader is corrupt.\n");
-		if (!fragment->IsActive()) logger.Write("Error: fragment shader is corrupt.\n");
-		return 0;
-	}
+
 	program = glCreateProgram();
 	glAttachShader(program, vertex->GetId());
 	glAttachShader(program, fragment->GetId());
+
 	glLinkProgram(program);
 
     // shader don't get deleted before they're detached
@@ -175,14 +124,12 @@ bool GLProgram::Link()
 	GLint link_ok = GL_FALSE;
 	glGetProgramiv(program, GL_LINK_STATUS, &link_ok);
 	if (link_ok == GL_FALSE) {
-		logger.Write("Failed to link program.\n");
+		logger.Write("Linking failed.\n");
 		logger.LogShaderInfo(program);
 		return 0;
 	}
 	logger.Write("Linked successfully.\n");
-    //glDetachShader(program, vertex->GetId());
-    //glDetachShader(program, fragment->GetId());
-	active = true;
+
 	return 1;
 }
 

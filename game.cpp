@@ -3,7 +3,7 @@
 Game::Game(void) :
     window(SCREEN_WIDTH, SCREEN_HEIGHT), 
     last_render_time(0), init_ok(false),
-    program(NULL),
+    program(),
     quad(NULL),
     cur_camera_acceleration(CAMERA_ACCELERATION),
     camera(NULL),
@@ -14,10 +14,9 @@ Game::Game(void) :
 Game::~Game(void)
 {
     if (init_ok) {
+        logger.Write("Game destroyed.\n");
         delete quad;
         delete camera;
-        delete program;
-        logger.Write("Game destroyed.\n");
     }
 }
 
@@ -25,14 +24,16 @@ bool Game::Initialize()
 {
     assert(!init_ok);
 
-    if (!InitGL()) return false;
+    if (!InitGL()) {
+        return false;
+    }
 
     camera = new SmoothCamera(glm::vec3(0.00, 0.0, -5.00001), glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, 1.0, 0.0));
 
     if (!InitObjects()) {
         delete camera;
         camera = NULL;
-        delete program;
+        program.reset();
         return false;
     }
     init_ok = true;
@@ -42,11 +43,18 @@ bool Game::Initialize()
 
 bool Game::InitGL()
 {
-    program = new GLProgram();
-    program->LoadVertexShader("shaders/vertex.glsl");
-    program->LoadFragmentShader("shaders/fragment.glsl");
+    program.reset(new GLProgram());
+
+    std::unique_ptr<GLShader> vertex(new GLShader(GL_VERTEX_SHADER));
+    vertex->LoadFromFile("shaders/vertex.glsl");
+    program->LoadVertexShader(vertex.release());
+
+    std::unique_ptr<GLShader> fragment(new GLShader(GL_FRAGMENT_SHADER));
+    fragment->LoadFromFile("shaders/fragment.glsl");
+    program->LoadFragmentShader(fragment.release());
+
     if (!program->Link()) {
-        delete program;
+        program.reset();
         return false;
     }
 
@@ -109,7 +117,7 @@ void Game::onDisplay()
     float elapsed_time = 0.001 * glutGet(GLUT_ELAPSED_TIME);
     program->SetUniform1f("elapsed_time", elapsed_time);
 
-    quad->Draw(program);
+    quad->Draw(program.get());
 
     glutSwapBuffers();
 
