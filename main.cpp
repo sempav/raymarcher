@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-const float FPS_CAP = 20.0f;
+const float FPS_CAP = 60.0f;
 
 static Game *game = NULL;
 
