@@ -1,6 +1,6 @@
-#include "game.h"
+#include "app.h"
 
-Game::Game(void) :
+App::App(void) :
     window(SCREEN_WIDTH, SCREEN_HEIGHT), 
     last_render_time(0), init_ok(false),
     program(),
@@ -11,16 +11,16 @@ Game::Game(void) :
 {
 }
 
-Game::~Game(void)
+App::~App(void)
 {
     if (init_ok) {
-        logger.Write("Game destroyed.\n");
+        logger.Write("App destroyed.\n");
         delete quad;
         delete camera;
     }
 }
 
-bool Game::Initialize()
+bool App::Initialize()
 {
     assert(!init_ok);
 
@@ -37,11 +37,11 @@ bool Game::Initialize()
         return false;
     }
     init_ok = true;
-    logger.Write("Game initialized.\n");
+    logger.Write("App initialized.\n");
     return init_ok;
 }
 
-bool Game::InitGL()
+bool App::InitGL()
 {
     program.reset(new GLProgram());
 
@@ -71,7 +71,7 @@ bool Game::InitGL()
     return true;
 }
 
-bool Game::InitObjects()
+bool App::InitObjects()
 {
     logger.Write("Initializing objects..\n");
     quad = new Quad();
@@ -93,7 +93,7 @@ void drawText(float x, float y, void *font, char *string) {
     }
 }
 
-void Game::onDisplay()
+void App::onDisplay()
 {
     assert(quad);
     assert(camera);
@@ -135,7 +135,7 @@ void Game::onDisplay()
     if (last_render_time < 1e-6) last_render_time = 1e-6;
 }
 
-void Game::ProcessInput()
+void App::ProcessInput()
 {
     float ROLL_ANGLE = ROLL_ANGLE_PER_SEC * last_render_time;
     if (keys[27]) // Escape
@@ -156,20 +156,20 @@ void Game::ProcessInput()
     camera->Update();
 }
 
-void Game::onIdle()
+void App::onIdle()
 {
     ProcessInput();
     //glutPostRedisplay();
 }
 
-void Game::onReshape(int width, int height)
+void App::onReshape(int width, int height)
 {
 	this->window.width = width;
     this->window.height = height;
     glViewport(0, 0, width, height);
 }
 
-void Game::onMouseMove(int x, int y)
+void App::onMouseMove(int x, int y)
 {
     float MOUSE_SENSITIVITY = MOUSE_SENSITIVITY_PER_SEC * last_render_time;
     if (window.width / 2 == x && window.height / 2 == y)

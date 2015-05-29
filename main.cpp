@@ -1,13 +1,13 @@
 #include "defines.h"
 #include "logger.h"
-#include "game.h"
+#include "app.h"
 #include "shader.h"
 
 #include <iostream>
 
 const float FPS_CAP = 60.0f;
 
-static Game *game = NULL;
+static App *game = NULL;
 
 void onDisplay()
 {
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 {
     logger.LogStartup(argc, argv);
 
-    game = new Game();
+    game = new App();
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_ALPHA | GLUT_DEPTH | GLUT_MULTISAMPLE);

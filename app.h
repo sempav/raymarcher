@@ -15,7 +15,7 @@ struct WindowInfo
 	WindowInfo(int w, int h) : width(w), height(h) { }
 };
 
-class Game
+class App
 {
 	WindowInfo window;
 
@@ -34,11 +34,11 @@ class Game
 
 	void ProcessInput();
 
-    Game(const Game &other) = delete;
-    Game& operator= (const Game &other) = delete;
+    App(const App &other) = delete;
+    App& operator= (const App &other) = delete;
 public:
-	Game(void);
-	~Game(void);
+	App(void);
+	~App(void);
 
 	bool Initialize();
 
