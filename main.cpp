@@ -7,37 +7,37 @@
 
 const float FPS_CAP = 60.0f;
 
-static App *game = NULL;
+static App *app = NULL;
 
 void onDisplay()
 {
-    game->onIdle();
-    game->onDisplay();
+    app->onIdle();
+    app->onDisplay();
 }
 
 void onIdle()
 {
-    game->onIdle();
+    app->onIdle();
 }
 
 void onReshape(int width, int height)
 {
-    game->onReshape(width, height);
+    app->onReshape(width, height);
 }
 
 void KeyboardFunc(unsigned char key, int x, int y)
 {
-    game->keys.PressKey(tolower(key));
+    app->keys.PressKey(tolower(key));
 }
 
 void KeyboardUpFunc(unsigned char key, int x, int y)
 {
-    game->keys.ReleaseKey(tolower(key));
+    app->keys.ReleaseKey(tolower(key));
 }
 
 void MotionFunc(int x, int y)
 {
-    game->onMouseMove(x, y);
+    app->onMouseMove(x, y);
 }
 
 void TimerFunc(int)
@@ -48,7 +48,7 @@ void TimerFunc(int)
 
 void free_resources()
 {
-    if (game) delete game;
+    if (app) delete app;
     logger.LogShutdown();
 }
 
@@ -56,11 +56,11 @@ int main(int argc, char **argv)
 {
     logger.LogStartup(argc, argv);
 
-    game = new App();
+    app = new App();
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_ALPHA | GLUT_DEPTH | GLUT_MULTISAMPLE);
-    glutInitWindowSize(game->GetWindowInfo()->width, game->GetWindowInfo()->height);
+    glutInitWindowSize(app->GetWindowInfo()->width, app->GetWindowInfo()->height);
     GLuint idWindow = glutCreateWindow("Ima title");
 
     logger.LogSystemInfo();
@@ -78,10 +78,10 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    if (game->Initialize()) {
+    if (app->Initialize()) {
         atexit(free_resources);
 
-        glutWarpPointer(game->GetWindowInfo()->width / 2, game->GetWindowInfo()->height / 2);
+        glutWarpPointer(app->GetWindowInfo()->width / 2, app->GetWindowInfo()->height / 2);
         glutSetCursor(GLUT_CURSOR_NONE);
 
         glutDisplayFunc(onDisplay);
@@ -96,8 +96,8 @@ int main(int argc, char **argv)
         glutMainLoop();
     }
     
-    delete game;
-    game = NULL;
+    delete app;
+    app = NULL;
     glutDestroyWindow(idWindow);
     return 0;
 }
