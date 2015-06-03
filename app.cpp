@@ -17,10 +17,13 @@ App::App(void) :
     quad(NULL),
     cur_camera_acceleration(CAMERA_ACCELERATION),
     camera(new SmoothCamera(glm::vec3(0.00, 0.0, -5.00001), glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, 1.0, 0.0)))
-{ 
-    if (!Initialize()) {
-        throw std::runtime_error("Failed to initialize something");
-    }
+{
+    glfwSetKeyCallback(window.handle, key_callback);
+    glfwSetFramebufferSizeCallback(window.handle, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window.handle, cursor_position_callback);
+
+    glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glViewport(0, 0, window.width, window.height);
 }
 
 App::~App(void)
@@ -30,40 +33,42 @@ App::~App(void)
         delete quad;
         delete camera;
     }
-    OnCleanup();
+    glfwTerminate();
 }
 
-bool App::Initialize()
+bool App::Initialize(std::string vertex_path, std::string fragment_path)
 {
     assert(!init_ok);
 
-    if (!InitGL()) {
+    if (!InitGL(vertex_path, fragment_path)) {
         return false;
     }
 
-    camera = new SmoothCamera(glm::vec3(0.00, 0.0, -5.00001), glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, 1.0, 0.0));
-
-    if (!InitObjects()) {
+    quad = new Quad();
+    if (!quad->LoadVBO()) {
+        delete quad;
+        quad = NULL;
         delete camera;
         camera = NULL;
         program.reset();
-        return false;
+
+        throw std::runtime_error("Failed to load quad VBO");
     }
     init_ok = true;
     logger.Write("App initialized.\n");
     return init_ok;
 }
 
-bool App::InitGL()
+bool App::InitGL(std::string vertex_path, std::string fragment_path)
 {
     program.reset(new GLProgram());
 
     std::unique_ptr<GLShader> vertex(new GLShader(GL_VERTEX_SHADER));
-    vertex->LoadFromFile("shaders/vertex.glsl");
+    vertex->LoadFromFile(vertex_path.c_str());
     program->LoadVertexShader(vertex.release());
 
     std::unique_ptr<GLShader> fragment(new GLShader(GL_FRAGMENT_SHADER));
-    fragment->LoadFromFile("shaders/fragment.glsl");
+    fragment->LoadFromFile(fragment_path.c_str());
     program->LoadFragmentShader(fragment.release());
 
     if (!program->Link()) {
@@ -87,25 +92,7 @@ bool App::InitGL()
 bool App::InitObjects()
 {
     logger.Write("Initializing objects..\n");
-    quad = new Quad();
-    if (!quad->LoadVBO()) {
-        delete quad;
-        quad = NULL;
-        return false;
-    }
     logger.Write("All objects initialized.\n");
-    return true;
-}
-
-bool App::OnInit(int argc, char *argv[])
-{
-    glfwSetKeyCallback(window.handle, key_callback);
-    glfwSetFramebufferSizeCallback(window.handle, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window.handle, cursor_position_callback);
-
-    glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glViewport(0, 0, window.width, window.height);
-
     return true;
 }
 
@@ -176,14 +163,9 @@ void App::OnRender()
     if (last_render_time < 1e-6) last_render_time = 1e-6;
 }
 
-void App::OnCleanup()
+int App::OnExecute(std::string vertex_path, std::string fragment_path)
 {
-    glfwTerminate();
-}
-
-int App::OnExecute(int argc, char *argv[])
-{
-	if (!OnInit(argc, argv)) {
+    if (!Initialize(vertex_path, fragment_path)) {
         return -1;
     }
     int time_start, time_delta;

@@ -29,12 +29,12 @@ class App
 	float cur_camera_acceleration;
 	SmoothCamera *camera;
 
-	bool InitGL();
+	bool Initialize(std::string vertex_path, std::string fragment_path);
+	bool InitGL(std::string vertex_path, std::string fragment_path);
 	bool InitObjects();
 
 	void ProcessInput();
 
-    bool OnInit(int argc, char *argv[]);
     void OnEvent();
     void OnResize(int width, int height);
     void OnKey(int key, int scancode, int action, int mode);
@@ -64,8 +64,7 @@ public:
         }
     }
 
-	bool Initialize();
-    int OnExecute(int argc, char *argv[]);
+    int OnExecute(std::string vertex_path, std::string fragment_path);
 
     KeyboardListener keys;
 

@@ -25,6 +25,35 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
     App::GetInstance().OnCursorPos(xpos, ypos);
 }
 
+bool parse_args(int argc, char **argv,
+                std::string &vertex_path, std::string &fragment_path)
+{
+    vertex_path = "shaders/vertex.glsl";
+    fragment_path = "shaders/fragment.glsl";
+    int cur = 1;
+    while (argc >= cur + 2) {
+        if (std::string(argv[cur]) == "-v") {
+            vertex_path = argv[cur + 1];
+        } else if (std::string(argv[cur]) == "-f") {
+            fragment_path = argv[cur + 1];
+        } else {
+            return false;
+        }
+        cur += 2;
+    }
+    if (argc > cur) {
+        return false;
+    }
+    return true;
+}
+
+void print_usage(int argc, char **argv)
+{
+    std::cout << "Usage: " << (argc ? argv[0] : "main") << " ";
+    std::cout << "[-f fragment_path] [-v vertex_path]";
+    std::cout << std::endl;
+}
+
 int main(int argc, char **argv)
 {
     logger.LogStartup(argc, argv);
@@ -34,9 +63,15 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
+    std::string vertex_path, fragment_path;
+    if (!parse_args(argc, argv, vertex_path, fragment_path)) {
+        print_usage(argc, argv);
+        return EXIT_FAILURE;
+    }
+
     App &app = App::GetInstance();
 
     logger.LogSystemInfo();
 
-    return app.OnExecute(argc, argv);
+    return app.OnExecute(vertex_path, fragment_path);
 }
