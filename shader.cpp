@@ -240,11 +240,11 @@ bool GLProgram::SetUniformMat4(const char *name, GLsizei count, GLboolean transp
 	return true;
 }
 
-void GLProgram::SetCamera(const Camera &camera)
+void GLProgram::SetCamera(const Camera &camera, float aspect_ratio)
 {
 	SetUniform3fv("camera_pos"  , 1, glm::value_ptr(camera.GetPos()));
 	SetUniform3fv("camera_dir"  , 1, glm::value_ptr(camera.GetDir()));
 	SetUniform3fv("camera_up"   , 1, glm::value_ptr(camera.GetUp() ));
-	SetUniform3fv("camera_right", 1, glm::value_ptr(camera.GetRight()));
+	SetUniform3fv("camera_right", 1, glm::value_ptr(camera.GetRight() * aspect_ratio));
 	SetUniform1f ("camera_eye_dist", 3); // 60 degrees fovy
 }

@@ -63,5 +63,5 @@ public:
     bool SetUniformMat3(const char *name, GLsizei count, GLboolean transpose, const GLfloat *value);
     bool SetUniformMat4(const char *name, GLsizei count, GLboolean transpose, const GLfloat *value);
 
-    void SetCamera(const Camera &camera);
+    void SetCamera(const Camera &camera, float aspect_ratio);
 };

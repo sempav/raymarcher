@@ -153,7 +153,7 @@ void App::OnRender()
 
     program->Use();
 
-    program->SetCamera(*camera);
+    program->SetCamera(*camera, window.ratio);
     float elapsed_time = glfwGetTime();
     program->SetUniform1f("elapsed_time", elapsed_time);
 
