@@ -6,10 +6,7 @@ CXXFLAGS= -g -std=c++14 -O2 -pedantic -Wall -Wextra -Wcast-align \
 		  -Wsign-conversion -Wsign-promo -Wstrict-null-sentinel \
 		  -Wstrict-overflow=5 -Wswitch-default -Wundef \
 		  -Wno-unused-parameter -Wno-old-style-cast -Wno-sign-conversion
-CXXFLAGS+= -DGLEW_STATIC
 CXXFLAGS+= -MMD -MP
-CXXFLAGS+= -fopenmp
-LDFLAGS+= -fopenmp
 LDLIBS=-lGL -lGLU -lGLEW -lglfw
 
 TARGET=$(BIN_DIR)/main
