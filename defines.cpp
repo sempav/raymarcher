@@ -16,6 +16,7 @@ const int SCREEN_WIDTH  = 1000;
 const int SCREEN_HEIGHT = 800;
 
 const int FRAMERATE = 60;
+const int MSEC_PER_FRAME = 1000.0 / FRAMERATE;
 
 float sgn(float a) {
 	return (a > 0) ? 1 : 

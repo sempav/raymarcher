@@ -184,11 +184,17 @@ int App::OnExecute(int argc, char *argv[])
 	if (!OnInit(argc, argv)) {
         return -1;
     }
+    int time_start, time_delta;
 	while (!glfwWindowShouldClose(window.handle)) {
+        time_start = static_cast<int>(1000 * glfwGetTime());
         glfwPollEvents(); // do callbacks execute in this thread?
 		OnLoop();
 		OnRender();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000 / FRAMERATE));
+
+        time_delta = static_cast<int>(1000 * glfwGetTime()) - time_start;
+        if (time_delta < MSEC_PER_FRAME) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(MSEC_PER_FRAME - time_delta));
+        }
 	}
 	return 0;
 } 

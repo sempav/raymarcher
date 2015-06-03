@@ -23,5 +23,6 @@ extern const int SCREEN_WIDTH;
 extern const int SCREEN_HEIGHT;
 
 extern const int FRAMERATE;
+extern const int MSEC_PER_FRAME;
 
 float sgn(float a);
