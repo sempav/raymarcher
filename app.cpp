@@ -8,6 +8,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 
+App *App::instance = nullptr;
+
 App::App(void) :
     window(SCREEN_WIDTH, SCREEN_HEIGHT, "Ima title"), 
     last_render_time(0), init_ok(false),

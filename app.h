@@ -14,6 +14,8 @@
 
 class App
 {
+    static App *instance;
+
 	Window window;
 
 	float last_render_time;
@@ -43,9 +45,24 @@ class App
 
     App(const App &other) = delete;
     App& operator= (const App &other) = delete;
-public:
-	App();
+
+    App();
 	~App();
+
+public:
+    static App &GetInstance() {
+        if (!instance) {
+            instance = new App();
+        }
+        return *instance;
+    }
+
+    static void ResetInstance() {
+        if (instance) {
+            delete instance;
+            instance = nullptr;
+        }
+    }
 
 	bool Initialize();
     int OnExecute(int argc, char *argv[]);
