@@ -1,14 +1,24 @@
 #include "app.h"
 
+#include <chrono>
+#include <thread>
+
+void error_callback(int error, const char* description);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
+
 App::App(void) :
-    window(SCREEN_WIDTH, SCREEN_HEIGHT), 
+    window(SCREEN_WIDTH, SCREEN_HEIGHT, "Ima title"), 
     last_render_time(0), init_ok(false),
     program(),
     quad(NULL),
     cur_camera_acceleration(CAMERA_ACCELERATION),
-    camera(NULL),
-    keys()
-{
+    camera(new SmoothCamera(glm::vec3(0.00, 0.0, -5.00001), glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, 1.0, 0.0)))
+{ 
+    if (!Initialize()) {
+        throw std::runtime_error("Failed to initialize something");
+    }
 }
 
 App::~App(void)
@@ -18,6 +28,7 @@ App::~App(void)
         delete quad;
         delete camera;
     }
+    OnCleanup();
 }
 
 bool App::Initialize()
@@ -84,16 +95,55 @@ bool App::InitObjects()
     return true;
 }
 
-void drawText(float x, float y, void *font, char *string) {
-    char *c;
-    glRasterPos2f(x,y);
+bool App::OnInit(int argc, char *argv[])
+{
+    glfwSetKeyCallback(window.handle, key_callback);
+    glfwSetFramebufferSizeCallback(window.handle, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window.handle, cursor_position_callback);
 
-    for(c=string; *c != '\0'; c++) {
-        glutBitmapCharacter(font, *c);
+    glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glViewport(0, 0, window.width, window.height);
+
+    return true;
+}
+
+void App::OnEvent()
+{
+}
+
+void App::OnResize(int width, int height)
+{
+    glViewport(0, 0, width, height);
+    window.width = width;
+    window.height = height;
+    window.ratio = width / static_cast<float>(height);
+}
+
+void App::OnKey(int key, int scancode, int action, int mode)
+{
+    if (action == GLFW_PRESS) {
+        keys.PressKey(key);
+    } else if (action == GLFW_RELEASE) {
+        keys.ReleaseKey(key);
     }
 }
 
-void App::onDisplay()
+void App::OnCursorPos(double xpos, double ypos)
+{
+    static const float ROT_COEFF = MOUSE_SENSITIVITY_PER_SEC * last_render_time;
+    static double old_xpos = 0.5;
+    static double old_ypos = 0.5;
+    camera->RotateLoc(ROT_COEFF, old_ypos - ypos, old_xpos - xpos, 0.0f);
+    old_xpos = xpos;
+    old_ypos = ypos;
+}
+
+void App::OnLoop()
+{
+    ProcessInput();
+}
+
+void App::OnRender()
 {
     assert(quad);
     assert(camera);
@@ -103,25 +153,13 @@ void App::onDisplay()
 
     program->Use();
 
-    //glm::mat4 model = glm::mat4(1.0f);
-    //glm::mat4 view = camera->GetViewMatrix();
-    //glm::mat4 projection = glm::perspective(45.0f, 1.0f * window.width / window.height, 0.001f, 100.0f);
-    //glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f);
-    //program->SetUniformMat4("model", 1, GL_FALSE, glm::value_ptr(model));
-    //program->SetUniformMat4("view", 1, GL_FALSE, glm::value_ptr(view));
-    //program->SetUniformMat4("projection", 1, GL_FALSE, glm::value_ptr(projection));
-
-    // program->SetUniform3fv("camera_pos", 1, glm::value_ptr(camera->GetPos()));
-
     program->SetCamera(*camera);
-    float elapsed_time = 0.001 * glutGet(GLUT_ELAPSED_TIME);
+    float elapsed_time = glfwGetTime();
     program->SetUniform1f("elapsed_time", elapsed_time);
 
     quad->Draw(program.get());
 
-    glutSwapBuffers();
-
-    //drawText(0.2f, 0.5, GLUT_BITMAP_HELVETICA_18, "Yo!01Il1ij!,.");
+    glfwSwapBuffers(window.handle);
 
     static float t = 0;
     last_render_time = elapsed_time - t;
@@ -130,50 +168,56 @@ void App::onDisplay()
     sprintf(s, "%.2f fps (%.4f sec/frame)",
                            1.0 / last_render_time,
                            last_render_time);
-    glutSetWindowTitle(s);
+
+    glfwSetWindowTitle(window.handle, s);
 
     if (last_render_time < 1e-6) last_render_time = 1e-6;
 }
 
+void App::OnCleanup()
+{
+    glfwTerminate();
+}
+
+int App::OnExecute(int argc, char *argv[])
+{
+	if (!OnInit(argc, argv)) {
+        return -1;
+    }
+	while (!glfwWindowShouldClose(window.handle)) {
+        glfwPollEvents(); // do callbacks execute in this thread?
+		OnLoop();
+		OnRender();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000 / FRAMERATE));
+	}
+	return 0;
+} 
+
 void App::ProcessInput()
 {
     float ROLL_ANGLE = ROLL_ANGLE_PER_SEC * last_render_time;
-    if (keys[27]) // Escape
-        glutLeaveMainLoop();
-    if (keys['w'])
+    if (keys[GLFW_KEY_ESCAPE]) {
+        glfwSetWindowShouldClose(window.handle, GL_TRUE);
+    }
+    if (keys[GLFW_KEY_W]) {
         camera->Accelerate(glm::vec3(0.0f, 0.0f, cur_camera_acceleration));
-    if (keys['s'])
+    }
+    if (keys[GLFW_KEY_S]) {
         camera->Accelerate(glm::vec3(0.0f, 0.0f, -cur_camera_acceleration));
-    if (keys['a'])
+    }
+    if (keys[GLFW_KEY_A]) {
         camera->Accelerate(glm::vec3(-cur_camera_acceleration, 0.0f, 0.0f));
-    if (keys['d']) 
+    }
+    if (keys[GLFW_KEY_D]) {
         camera->Accelerate(glm::vec3(cur_camera_acceleration, 0.0f, 0.0f));
-    if (keys['q'])
+    }
+    if (keys[GLFW_KEY_Q]) {
         camera->RotateLoc(ROLL_ANGLE, 0.0f, 0.0f, -1.0f);
-    if (keys['e'])
+    }
+    if (keys[GLFW_KEY_E]) {
         camera->RotateLoc(ROLL_ANGLE, 0.0f, 0.0f, 1.0f);
+    }
     keys.ClearNewKeys();
     camera->Update();
 }
 
-void App::onIdle()
-{
-    ProcessInput();
-    //glutPostRedisplay();
-}
-
-void App::onReshape(int width, int height)
-{
-	this->window.width = width;
-    this->window.height = height;
-    glViewport(0, 0, width, height);
-}
-
-void App::onMouseMove(int x, int y)
-{
-    float MOUSE_SENSITIVITY = MOUSE_SENSITIVITY_PER_SEC * last_render_time;
-    if (window.width / 2 == x && window.height / 2 == y)
-        return;
-    camera->RotateLoc(MOUSE_SENSITIVITY, window.height / 2 - y, window.width / 2 - x, 0.0f);
-    glutWarpPointer(window.width / 2, window.height / 2);
-}

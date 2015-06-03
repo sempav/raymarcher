@@ -1,6 +1,10 @@
 #include "logger.h"
 
+#include "defines.h"
+
 #include <stdexcept>
+#include <cstdio>
+#include <cstdarg>
 
 // apparently this is an outdated version
 Logger logger;

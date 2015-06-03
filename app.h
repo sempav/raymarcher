@@ -1,26 +1,24 @@
 #pragma once
 
-#include "defines.h"
-#include "logger.h"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 #include "camera.h"
+#include "defines.h"
 #include "keyboard.h"
+#include "logger.h"
 #include "quad.h"
 #include "shader.h"
+#include "window.h"
 
-struct WindowInfo
-{
-	int width;
-	int height;
-	WindowInfo(int w, int h) : width(w), height(h) { }
-};
 
 class App
 {
-	WindowInfo window;
+	Window window;
 
 	float last_render_time;
 	bool init_ok;
+
 
     std::unique_ptr<GLProgram> program;
 
@@ -34,21 +32,27 @@ class App
 
 	void ProcessInput();
 
+    bool OnInit(int argc, char *argv[]);
+    void OnEvent();
+    void OnResize(int width, int height);
+    void OnKey(int key, int scancode, int action, int mode);
+    void OnCursorPos(double xpos, double ypos);
+    void OnLoop();
+    void OnRender();
+    void OnCleanup();
+
     App(const App &other) = delete;
     App& operator= (const App &other) = delete;
 public:
-	App(void);
-	~App(void);
+	App();
+	~App();
 
 	bool Initialize();
+    int OnExecute(int argc, char *argv[]);
 
-	void onDisplay();
-	void onIdle();
-	void onReshape(int width, int height);
-	void onMouseMove(int x, int y);
+    KeyboardListener keys;
 
-	//void Update(float delta_time);
-
-	KeyboardListener keys;
-	const WindowInfo* GetWindowInfo() {return &window; }
+    friend void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    friend void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+    friend void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 };

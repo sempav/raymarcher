@@ -1,6 +1,9 @@
 #pragma once
 
-#include "defines.h"
+#include <cstdio>
+#include <string>
+#include <vector>
+#include <GL/glew.h>
 
 class Logger
 {

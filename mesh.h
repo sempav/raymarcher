@@ -1,9 +1,7 @@
 #pragma once
 
-#include "defines.h"
-#include "logger.h"
-
 #include "buffer.h"
+#include "logger.h"
 #include "shader.h"
 
 class Mesh

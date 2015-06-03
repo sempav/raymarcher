@@ -5,99 +5,41 @@
 
 #include <iostream>
 
-const float FPS_CAP = 60.0f;
+App *app_ptr = nullptr;
 
-static App *app = NULL;
-
-void onDisplay()
+void error_callback(int error, const char* description)
 {
-    app->onIdle();
-    app->onDisplay();
+    fprintf(stderr, "Error %d: %s", error, description);
 }
 
-void onIdle()
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    app->onIdle();
+    app_ptr->OnKey(key, scancode, action, mods);
 }
 
-void onReshape(int width, int height)
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-    app->onReshape(width, height);
+    app_ptr->OnResize(width, height);
 }
 
-void KeyboardFunc(unsigned char key, int x, int y)
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    app->keys.PressKey(tolower(key));
-}
-
-void KeyboardUpFunc(unsigned char key, int x, int y)
-{
-    app->keys.ReleaseKey(tolower(key));
-}
-
-void MotionFunc(int x, int y)
-{
-    app->onMouseMove(x, y);
-}
-
-void TimerFunc(int)
-{
-    glutPostRedisplay();
-    glutTimerFunc(1000/FPS_CAP, TimerFunc, 0);
-}
-
-void free_resources()
-{
-    if (app) delete app;
-    logger.LogShutdown();
+    app_ptr->OnCursorPos(xpos, ypos);
 }
 
 int main(int argc, char **argv)
 {
     logger.LogStartup(argc, argv);
 
-    app = new App();
+    glfwSetErrorCallback(error_callback);
+    if (!glfwInit()) {
+        return EXIT_FAILURE;
+    }
 
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_ALPHA | GLUT_DEPTH | GLUT_MULTISAMPLE);
-    glutInitWindowSize(app->GetWindowInfo()->width, app->GetWindowInfo()->height);
-    GLuint idWindow = glutCreateWindow("Ima title");
+    App app;
+    app_ptr = &app;
 
     logger.LogSystemInfo();
 
-    GLenum glew_status = glewInit();
-    if (glew_status != GLEW_OK) {
-        logger.Write("Error initializing GLEW: %s\n", glewGetErrorString(glew_status));
-        return 0;
-    }
-
-    if (!GLEW_VERSION_2_0) {
-        logger.Write("Error: OpenGL 2.0 not supported.\n");
-        std::cerr << "Error: OpenGL 2.0 not supported.\n";
-        //MessageBox(NULL, "OpenGL 2.0 not supported.", "Error", MB_ICONEXCLAMATION);
-        return 0;
-    }
-
-    if (app->Initialize()) {
-        atexit(free_resources);
-
-        glutWarpPointer(app->GetWindowInfo()->width / 2, app->GetWindowInfo()->height / 2);
-        glutSetCursor(GLUT_CURSOR_NONE);
-
-        glutDisplayFunc(onDisplay);
-        //glutIdleFunc(onIdle);
-        glutTimerFunc(1000/FPS_CAP, TimerFunc, 0);
-        glutReshapeFunc(onReshape);
-        glutKeyboardFunc(KeyboardFunc);
-        glutKeyboardUpFunc(KeyboardUpFunc);
-        glutMotionFunc(MotionFunc);
-        glutPassiveMotionFunc(MotionFunc);
-
-        glutMainLoop();
-    }
-    
-    delete app;
-    app = NULL;
-    glutDestroyWindow(idWindow);
-    return 0;
+    return app.OnExecute(argc, argv);
 }

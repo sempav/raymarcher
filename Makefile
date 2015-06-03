@@ -10,7 +10,7 @@ CXXFLAGS+= -DGLEW_STATIC
 CXXFLAGS+= -MMD -MP
 CXXFLAGS+= -fopenmp
 LDFLAGS+= -fopenmp
-LDLIBS=-lGL -lGLU -lGLEW -lglut
+LDLIBS=-lGL -lGLU -lGLEW -lglfw
 
 TARGET=$(BIN_DIR)/main
 

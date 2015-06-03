@@ -2,14 +2,29 @@
 
 #include "defines.h"
 
+#include <vector>
+#include <GLFW/glfw3.h>
+
 class KeyboardListener
 {
-	bool keys[256];
-	bool fresh_keys[256];
+    std::vector<bool> keys;
+    std::vector<bool> fresh_keys;
 public:
-	void PressKey(unsigned char key);
-	void ReleaseKey(unsigned char key);
-	const bool& operator[] (unsigned char key) const { return keys[key]; }
-	bool NewlyPressed(unsigned char key) const;
-	void ClearNewKeys();
+    KeyboardListener(): keys(GLFW_KEY_LAST),
+                        fresh_keys(GLFW_KEY_LAST)
+    { }
+
+	void PressKey(int key) {
+        fresh_keys[key] = !keys[key];
+        keys[key] = true;
+    }
+	void ReleaseKey(int key) { 
+        keys[key] = false;
+        fresh_keys[key] = false;
+    }
+	bool operator[] (int key)  const { return keys[key]; }
+	bool NewlyPressed(int key) const { return fresh_keys[key]; }
+	void ClearNewKeys() {
+        fresh_keys.assign(fresh_keys.size(), false);
+    }
 };
