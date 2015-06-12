@@ -1,7 +1,14 @@
 #version 130
 
 #define eps 1e-4
-#define min_step 5e-4
+#define min_step 1e-6
+#define NORMAL_EPS 1e-4
+
+//#define DRAW_PLANE
+#define PLANE_Y 0.0
+
+#define REFLECTION
+#define SECOND_REFLECTION
 
 uniform vec3 camera_pos;
 uniform vec3 camera_dir;
@@ -17,6 +24,46 @@ struct Ray {
     vec3 origin;
     vec3 dir_inv;
 };
+
+float norclamp(float x, float l, float h)
+{
+    return (clamp(x, l, h) - l) / (h - l);
+}
+
+//  L 0 1 2 H
+// r 0 0 / 1
+// g / 1 1 \
+// b 1 \ 0 0
+vec3 heatmap_color4(float val, float lo, float hi)
+{
+    if (val > hi || val < lo) {
+        return vec3(1.0, 0.0, 1.0);
+    }
+    val = clamp(val, lo, hi);
+    float m[3];
+    for (int i = 0; i < 3; ++i) {
+        m[i] = ((3 - i) * lo + (1 + i) * hi) / 4;
+    }
+
+    float b = 1.0 - norclamp(val, m[0], m[1]);
+    float g = norclamp(val,   lo, m[0]) * (1.0 - norclamp(val, m[2], hi));
+    float r = norclamp(val, m[1], m[2]);
+    vec3 col = vec3(r, g, b);
+    return col;
+    if (b == 1.0) {
+        return vec3(1.0, 0.0, 1.0);
+    }
+
+    float speed = 1.5;
+    float t = speed * mod(elapsed_time, 3.0 / speed);
+    if (t < 1.0) {
+        return vec3(col.r);
+    } else if (t < 2.0) {
+        return vec3(col.g);
+    } else {
+        return vec3(col.b);
+    }
+}
 
 float sphere(in vec3 p, in float radius)
 {
@@ -112,10 +159,42 @@ float menger(in vec3 p)
     return d;
 }
 
+
 float DistanceField(in vec3 p)
 {
-    //return sphere(mod(p, 3.0) - 1.5, 0.3);
-    //return min(sphere(p, 1.0), sdPlane(p, -2.0));
+    return sphere(mod(p + 1.5, 3.0) - 1.5, 0.5);
+    //return sdTorus(p, vec2(5.0, 1.0));
+    //return menger(p);
+    //float d = sphere(p, 2.0);
+    //if (d < 1.0) {
+    //    float o1 = 10 * sin(elapsed_time);
+    //    float o2 = 10 * sin(1.3 * elapsed_time + 1);
+    //    float o3 = 10 * sin(1.1 * elapsed_time + 0.3);
+    //    d += 0.1 * sin(p.x * 10 + o1) * sin(p.y * 10 + o2) * sin(p.z * 10 + o3);
+    //}
+    //d = min(d, sdPlane(p, -5.0 + sin(elapsed_time)));
+    //return d;
+
+    /*
+    float r = sphere(p, 1.0);
+    r = max(r, -sphere(p, 0.995));
+    vec3 np = p;
+    //np.xy += 0.1 * elapsed_time;
+    np.x += 0.11 + 0.05 * sin(2 + 1.57 * elapsed_time);
+    np.y += 0.11 + 0.03 * sin(1 + 2.34 * elapsed_time);
+    np.z += 0.11 + 0.05 * sin(2 * elapsed_time);
+    r = max(r, -sdBox(mod(np + 0.11, 0.22) - vec3(0.11), vec3(0.2)));
+    r = min(r, sphere(p, 0.9));
+    return r;
+*/
+    /*
+    float r = 100000;
+    for (int i = 0; i < 8; ++i) {
+        r = min(r, sphere(p - vec3(i * 1.0, sin(2 * elapsed_time + i), sin(2 * elapsed_time + i) + cos(3 * elapsed_time + i)), 0.5));
+    }
+    return r;
+    */
+/*
     float ang = atan(p.z, p.x);
     float rad = sqrt(p.x * p.x + p.z * p.z);
     float delta_phi = (2 * 3.14159) / 8;
@@ -134,35 +213,59 @@ float DistanceField(in vec3 p)
     d = min(d, sphere(p - obj, (1.0)));
 
     d = min(d, sdPlane(p, -5.0));
-    d = min(d, menger(p));
+    //d = min(d, sphere(p, 2.0));
     return d;
+*/
+}
+
+float DistanceFieldWithPlane(vec3 p)
+{
+    return min(DistanceField(p), udPlane(p, PLANE_Y));
 }
 
 vec3 GetIntersect(in vec3 ro, in vec3 rd, in float mint, in float maxt, out float occl)
 {
     float h;
     occl = 0.0;
-    int ret_flag = 0;
-    vec3 ret_val = vec3(0.0f);
     for (float t = mint; t < maxt; ) {
         h = DistanceField(ro + t * rd);
-
         if (h < eps) {
             return ro + t * rd;
         }
-
-        //ret_flag = (1 - ret_flag) * int(sign(1 + sign(eps - h)));
-        //ret_val = (1 - ret_flag) * ret_val + ret_flag * (ro + t * rd);
-
         t += h;
         occl += 1.0 / (maxt - mint);
     }
     return vec3(0, 0, 0);
 }
 
+vec3 GetIntersectWithPlane(in vec3 ro, in vec3 rd, in float mint, in float maxt, out float occl)
+{
+    float h;
+    occl = 0.0;
+
+    float plane_t = (PLANE_Y - ro.y) / rd.y;
+    if (plane_t > 0) {
+        maxt = min(maxt, plane_t);
+    }
+
+    for (float t = mint; t < maxt; ) {
+        h = DistanceField(ro + t * rd);
+        if (h < eps) {
+            return ro + t * rd;
+        }
+        t += h;
+        occl += 1.0 / (maxt - mint);
+    }
+
+    if (plane_t > 0) {
+        return ro + plane_t * rd;
+    } else {
+        return vec3(0, 0, 0);
+    }
+}
+
 vec3 point_normal(in vec3 p)
 {
-#define NORMAL_EPS 1e-4
     float d = DistanceField(p);
     return normalize(vec3(DistanceField(p + vec3(NORMAL_EPS, 0, 0)) - d,
                           DistanceField(p + vec3(0, NORMAL_EPS, 0)) - d,
@@ -184,44 +287,12 @@ float shadow(in vec3 ro, in vec3 rd, float mint, float maxt, float k)
     return res;
 }
 
-float norclamp(float x, float l, float h)
+vec3 texture(vec3 p)
 {
-    return (clamp(x, l, h) - l) / (h - l);
-}
-
-//  L 0 1 2 H
-// r 0 0 / 1
-// g / 1 1 \
-// b 1 \ 0 0
-vec3 heatmap_color4(float val, float lo, float hi)
-{
-    if (val > hi || val < lo) {
-        return vec3(1.0, 0.0, 1.0);
-    }
-    val = clamp(val, lo, hi);
-    float m[3];
-    for (int i = 0; i < 3; ++i) {
-        m[i] = ((3 - i) * lo + (1 + i) * hi) / 4;
-    }
-
-    float b = 1.0 - norclamp(val, m[0], m[1]);
-    float g = norclamp(val,   lo, m[0]) * (1.0 - norclamp(val, m[2],   hi));
-    float r = norclamp(val, m[1], m[2]);
-    vec3 col = vec3(r, g, b);
-    return col;
-    if (b == 1.0) {
-        return vec3(1.0, 0.0, 1.0);
-    }
-
-    float speed = 1.5;
-    float t = speed * mod(elapsed_time, 3.0 / speed);
-    if (t < 1.0) {
-        return vec3(col.r);
-    } else if (t < 2.0) {
-        return vec3(col.g);
-    } else {
-        return vec3(col.b);
-    }
+    return vec3(1.0);
+   //return 0.5 + 0.5 * sin(10 * p);
+    float value = sin(9 * p.x) + sin(9 * p.y) + sin(9 * p.z);
+    return 0.5 + 0.5 * sign(vec3(value, value, -1.0));
 }
 
 void main(void) 
@@ -233,42 +304,80 @@ void main(void)
     ray_orig = camera_pos;
 
     float occl;
-    point = GetIntersect(ray_orig, ray_dir, 0.01, 1000, occl);
+#ifdef DRAW_PLANE
+    point = GetIntersectWithPlane(ray_orig, ray_dir, 0.01, 400, occl);
+#else
+    point = GetIntersect(ray_orig, ray_dir, 0.01, 400, occl);
+#endif
+
     gl_FragColor = vec4(0);
 
+#ifdef DRAW_PLANE
+    if (abs(point.y - PLANE_Y) < eps && length(point) > eps) {
+        float d = DistanceField(point);
+        gl_FragColor = vec4(heatmap_color4(-d, -10, -0.01), 1);
+        if (abs(d - floor(d)) < 2e-2) {
+            gl_FragColor = vec4(vec3(0), 1);
+        }
+    }
+    else
+#endif
     if (point != vec3(0)) {
 
         normal = point_normal(point);
-        vec3  light = camera_pos;
-        vec3  light_dir = normalize(light - point);
+        //vec3 light = vec3(5.0 + 2.0 * sin(elapsed_time), 5.0f, -5.0 - 2.0 * cos(elapsed_time));
+        vec3 light = camera_pos;
+        vec3 light_dir = normalize(light - point);
         float dotp_diffuse = clamp(dot(light_dir, normal), 0, 1);
+        vec3 color = texture(point);
+        color *= dotp_diffuse;// * shadow(point, light_dir, 0.01, 100, 10);
 
+        float specularCoefficient = 0.0;
+        float material_shininess = 20.0;
+        if (material_shininess > 0.0) {
+            specularCoefficient = pow(max(0.0, dot(-ray_dir,
+                                                   reflect(-light_dir, normal))), 
+                                      material_shininess);
+        }
+        vec3 specular = specularCoefficient * vec3(1.0);
+
+#ifdef REFLECTION
         // first reflection
-        vec3 refl_color = vec3(0.0);
-        vec3 new_dir = reflect(ray_dir, normal);
-        vec3 new_point = GetIntersect(point, new_dir, 0.01, 80, occl);
-        if (new_point != vec3(0)) {
-            vec3 new_normal = point_normal(new_point);
-            vec3 new_light_dir = normalize(light - new_point);
-            float new_diffuse = clamp(dot(new_light_dir, new_normal), 0, 1);
+        vec3 fst_color = vec3(0.0);
+        vec3 fst_dir = reflect(ray_dir, normal);
+        vec3 fst_point = GetIntersect(point, fst_dir, 0.01, 80, occl);
+        if (fst_point != vec3(0)) {
+            vec3 fst_normal = point_normal(fst_point);
+            vec3 fst_light_dir = normalize(light - fst_point);
+            float fst_diffuse = clamp(dot(fst_light_dir, fst_normal), 0, 1);
+            fst_color = texture(fst_point);
+            fst_color *= fst_diffuse;
 
-            // second reflection
-            vec3 snd_refl_color = vec3(0.0);
-            vec3 snd_dir = reflect(new_dir, new_normal);
-            vec3 snd_point = GetIntersect(new_point, snd_dir, 0.01, 30, occl);
+#ifdef SECOND_REFLECTION
+            vec3 snd_dir = reflect(fst_dir, fst_normal);
+            vec3 snd_point = GetIntersect(fst_point, snd_dir, 0.01, 30, occl);
+            vec3 snd_color = texture(snd_point);
             if (snd_point != vec3(0)) {
                 vec3 snd_normal = point_normal(snd_point);
                 vec3 snd_light_dir = normalize(light - snd_point);
                 float snd_diffuse = clamp(dot(snd_light_dir, snd_normal), 0, 1);
-                snd_refl_color = vec3(0.8 * snd_diffuse);
+                snd_color *= snd_diffuse;
             }
 
-            refl_color = vec3(0.5 * 0.8) + 0.5 * snd_refl_color;
-            refl_color *= new_diffuse;
+            fst_color = 0.5 * fst_color + 0.5 * snd_color;
+#endif //SECOND_REFLECTION
+            //if (material_shininess > 0.0) {
+            //    specularCoefficient = pow(max(0.0, dot(-new_dir,
+            //                    reflect(-new_light_dir, new_normal))), 
+            //            material_shininess);
+            //}
+            //vec3 new_specular = specularCoefficient * vec3(1.0);
+            //fst_color += new_specular;
         }
 
-        vec3 color = vec3(0.5 * 0.8) + 0.5 * refl_color;
-
-        gl_FragColor = vec4(color * vec3(dotp_diffuse), 1);
+        color = 0.5 * color + 0.5 * fst_color;
+#endif //REFLECTION
+        color += specular;
+        gl_FragColor = vec4(color, 1);
     }
 }
