@@ -1,7 +1,6 @@
 #include "defines.h"
 
-const char *FILE_GEOM           = "data/geom.dat";
-const char *FILE_LOG            = "log/cube.log";
+const char *FILE_LOG            = "log/main.log";
 const char *FILE_COMPILE_ERRORS = "log/errors.log";
 
 const float CAMERA_ACCELERATION = 0.04;
