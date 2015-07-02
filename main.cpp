@@ -73,5 +73,7 @@ int main(int argc, char **argv)
 
     logger.LogSystemInfo();
 
-    return app.OnExecute(vertex_path, fragment_path);
+    try {
+        return app.OnExecute(vertex_path, fragment_path);
+    } catch(const std::exception &e) { }
 }
