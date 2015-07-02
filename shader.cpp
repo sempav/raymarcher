@@ -22,7 +22,7 @@ bool GLShader::LoadFromFile(const char *filename)
 {
 	FILE* input = fopen(filename, "rb");
 	if (!input || fseek(input, 0, SEEK_END) == -1) {
-        fclose(input);
+        if (input) fclose(input);
         return 0;
     }
 

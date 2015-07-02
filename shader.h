@@ -19,7 +19,7 @@ public:
     bool LoadFromFile(const char *filename);
     bool Load(const char *source);
 
-    GLuint GetId()  { return shader; }
+    GLuint GetId() const  { return shader; }
 };
 
 class GLProgram
