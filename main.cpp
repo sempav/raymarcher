@@ -75,5 +75,8 @@ int main(int argc, char **argv)
 
     try {
         return app.OnExecute(vertex_path, fragment_path);
-    } catch(const std::exception &e) { }
+    } catch(const std::exception &e) {
+        std::cerr << "Exception occurred: " << e.what() << std::endl;
+        std::cerr << "Program terminated." << std::endl;
+    }
 }
