@@ -9,7 +9,7 @@
 // apparently this is an outdated version
 Logger logger;
 
-Logger::Logger(void) : file(NULL), indent()
+Logger::Logger(void) : file(NULL), duplicate_to_stderr(true), indent()
 {
 	file = fopen(FILE_LOG, "w");
 	if (file == NULL) {
@@ -29,13 +29,24 @@ Logger::~Logger(void)
 	if (file) fclose(file);
 }
 
+void Logger::WriteToFile(FILE *fout, const char *format, va_list args)
+{
+	vfprintf(fout, format, args);
+	fflush(fout);
+}
+
 void Logger::Write(const char *format, ...)
 {
 	va_list args;
 	va_start(args, format);
-	vfprintf(file, format, args);
+    if (duplicate_to_stderr) {
+        va_list a;
+        va_copy(a, args);
+        WriteToFile(stderr, format, a);
+        va_end(a);
+    }
+    WriteToFile(file, format, args);
 	va_end(args);
-	fflush(file);
 }
 
 void Logger::LogStartup(int argc, char *argv[])
