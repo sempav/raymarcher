@@ -9,15 +9,19 @@
 // apparently this is an outdated version
 Logger logger;
 
-Logger::Logger(void) : file(NULL), indent(), compile_log_created(false)
+Logger::Logger(void) : file(NULL), indent()
 {
 	file = fopen(FILE_LOG, "w");
 	if (file == NULL) {
         throw std::runtime_error("Failed to create log file");
     }
 	time_t timer = time(NULL);
+
+    // erase contents of FILE_COMPILE_ERRORS
+    FILE *f = fopen(FILE_COMPILE_ERRORS, "w");
+    fclose(f);
+
 	fprintf(file, "%s\nLogger initialized\n", ctime(&timer));
-	compile_log_created = false;
 }
 
 Logger::~Logger(void)
@@ -86,16 +90,8 @@ void Logger::LogShaderInfo(GLuint object, const char *prefix)
 		glGetProgramInfoLog(object, log_length, NULL, log);
 	logger.Write("%s\n", log);
 
-	FILE *fcomp;
-	if (compile_log_created) {
-		fcomp = fopen(FILE_COMPILE_ERRORS, "a");
-		fprintf(fcomp, "\n");
-	} 
-	else {
-		fcomp = fopen(FILE_COMPILE_ERRORS, "w");
-		compile_log_created = true;
-	}
-	fprintf(fcomp, "%s\n%s\n", prefix, log);
+	FILE *fcomp = fopen(FILE_COMPILE_ERRORS, "a");
+	fprintf(fcomp, "%s\n%s\n\n", prefix, log);
 
 	free(log);
 }

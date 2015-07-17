@@ -9,7 +9,6 @@ class Logger
 {
 	FILE *file;
 	std::string indent;
-	bool compile_log_created; //so that fragment log won't overwrite vertex log
     Logger(const Logger &a) = delete;
     Logger &operator= (const Logger &a) = delete;
 public:
