@@ -158,6 +158,10 @@ void App::OnRender()
                            1.0 / last_render_time,
                            last_render_time);
 
+    fprintf(stderr, "%.2f fps (%.4f sec/frame)\n",
+                           1.0 / last_render_time,
+                           last_render_time);
+
     glfwSetWindowTitle(window.handle, s);
 
     if (last_render_time < 1e-6) last_render_time = 1e-6;

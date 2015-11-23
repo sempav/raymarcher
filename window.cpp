@@ -11,7 +11,7 @@ Window::Window(int w, int h, std::string title): handle(nullptr),
 {
     // prevents tiling wms (such as i3) from tiling the window,
     // and makes it floating instead
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    //glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_FOCUSED, GL_TRUE);
 
     handle = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
