@@ -16,24 +16,24 @@ class App
 {
     static App *instance;
 
-	Window window;
+    Window window;
 
-	float last_render_time;
-	bool init_ok;
+    float last_render_time;
+    bool init_ok;
 
 
     std::unique_ptr<GLProgram> program;
 
-	Quad *quad;
+    Quad *quad;
 
-	float cur_camera_acceleration;
-	SmoothCamera *camera;
+    float cur_camera_acceleration;
+    SmoothCamera *camera;
 
-	bool Initialize(std::string vertex_path, std::string fragment_path);
-	bool InitGL(std::string vertex_path, std::string fragment_path);
-	bool InitObjects();
+    bool Initialize(std::string vertex_path, std::string fragment_path);
+    bool InitGL(std::string vertex_path, std::string fragment_path);
+    bool InitObjects();
 
-	void ProcessInput();
+    void ProcessInput();
 
     void OnEvent();
     void OnResize(int width, int height);
@@ -47,7 +47,7 @@ class App
     App& operator= (const App &other) = delete;
 
     App();
-	~App();
+    ~App();
 
 public:
     static App &GetInstance() {

@@ -4,10 +4,10 @@
 
 class Quad
 {
-	Mesh mesh;
-	
+    Mesh mesh;
+    
 public:
     Quad(): mesh() { }
-	bool LoadVBO();
-	void Draw(GLProgram* program);
+    bool LoadVBO();
+    void Draw(GLProgram* program);
 };

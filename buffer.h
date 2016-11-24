@@ -5,22 +5,22 @@
 
 class GLBuffer
 {
-	GLuint name;
-	GLenum target;
+    GLuint name;
+    GLenum target;
 
 public:
-	GLBuffer(GLenum target);
-	virtual ~GLBuffer(void);
+    GLBuffer(GLenum target);
+    virtual ~GLBuffer(void);
 
-	void Generate();
-	void Bind();
-	void Unbind();
-	bool BufferData(GLsizeiptr size, const GLvoid *data, GLenum usage);
-	void Delete();
+    void Generate();
+    void Bind();
+    void Unbind();
+    bool BufferData(GLsizeiptr size, const GLvoid *data, GLenum usage);
+    void Delete();
 
-	bool Empty() { return 0 == name; }
+    bool Empty() { return 0 == name; }
 
-	int GetSize();
+    int GetSize();
 
-	void SetTarget(GLenum target);
+    void SetTarget(GLenum target);
 };

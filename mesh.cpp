@@ -62,7 +62,7 @@ bool Mesh::LoadVBO()
 
 void Mesh::Draw(GLProgram *program)
 {
-	if (!vbo_loaded) {
+    if (!vbo_loaded) {
         logger.Write("Error drawing mesh: VBO not loaded.\n");
         return;
     }

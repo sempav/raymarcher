@@ -169,18 +169,18 @@ int App::OnExecute(std::string vertex_path, std::string fragment_path)
         return -1;
     }
     int time_start, time_delta;
-	while (!glfwWindowShouldClose(window.handle)) {
+    while (!glfwWindowShouldClose(window.handle)) {
         time_start = static_cast<int>(1000 * glfwGetTime());
         glfwPollEvents(); // do callbacks execute in this thread?
-		OnLoop();
-		OnRender();
+        OnLoop();
+        OnRender();
 
         time_delta = static_cast<int>(1000 * glfwGetTime()) - time_start;
         if (time_delta < MSEC_PER_FRAME) {
             std::this_thread::sleep_for(std::chrono::milliseconds(MSEC_PER_FRAME - time_delta));
         }
-	}
-	return 0;
+    }
+    return 0;
 } 
 
 void App::ProcessInput()

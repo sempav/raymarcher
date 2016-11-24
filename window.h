@@ -9,10 +9,10 @@
 struct Window
 {
     GLFWwindow *handle;
-	int width;
-	int height;
+    int width;
+    int height;
     float ratio;
 
-	Window(int w, int h, std::string title);
+    Window(int w, int h, std::string title);
     ~Window();
 };

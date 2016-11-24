@@ -18,6 +18,6 @@ const int FRAMERATE = 30;
 const int MSEC_PER_FRAME = 1000.0 / FRAMERATE;
 
 float sgn(float a) {
-	return (a > 0) ? 1 : 
-	       (a < 0) ? -1 : 0;
+    return (a > 0) ? 1 : 
+           (a < 0) ? -1 : 0;
 }
