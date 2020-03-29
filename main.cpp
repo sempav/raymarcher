@@ -1,19 +1,16 @@
-#include "defines.h"
-#include "logger.h"
-#include "app.h"
-#include "shader.h"
-
 #include <cstdlib>
 #include <iostream>
 
-void error_callback(int error, const char *description)
-{
+#include "app.h"
+#include "defines.h"
+#include "logger.h"
+#include "shader.h"
+
+void error_callback(int error, const char *description) {
     fprintf(stderr, "Error %d (0x%x): %s\n", error, error, description);
 }
 
-bool parse_args(int argc, char **argv,
-                std::string &vertex_path, std::string &fragment_path)
-{
+bool parse_args(int argc, char **argv, std::string &vertex_path, std::string &fragment_path) {
     vertex_path = "shaders/vertex.glsl";
     fragment_path = "shaders/fragment.glsl";
     int cur = 1;
@@ -33,15 +30,13 @@ bool parse_args(int argc, char **argv,
     return true;
 }
 
-void print_usage(int argc, char **argv)
-{
+void print_usage(int argc, char **argv) {
     std::cout << "Usage: " << (argc ? argv[0] : "main") << " ";
     std::cout << "[-f fragment_path] [-v vertex_path]";
     std::cout << std::endl;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     logger.LogStartup(argc, argv);
 
     glfwSetErrorCallback(error_callback);

@@ -3,28 +3,26 @@
 #include <chrono>
 #include <thread>
 
-void key_callback(GLFWwindow*, int key, int scancode, int action, int mods)
-{
+void key_callback(GLFWwindow*, int key, int scancode, int action, int mods) {
     App::GetInstance().OnKey(key, scancode, action, mods);
 }
 
-void framebuffer_size_callback(GLFWwindow*, int width, int height)
-{
+void framebuffer_size_callback(GLFWwindow*, int width, int height) {
     App::GetInstance().OnResize(width, height);
 }
 
-void cursor_position_callback(GLFWwindow*, double xpos, double ypos)
-{
+void cursor_position_callback(GLFWwindow*, double xpos, double ypos) {
     App::GetInstance().OnCursorPos(xpos, ypos);
 }
 
-App::App(void) :
-    window(SCREEN_WIDTH, SCREEN_HEIGHT, "Ima title"), 
-    last_render_time(0), init_ok(false),
-    program(),
-    cur_camera_acceleration(CAMERA_ACCELERATION),
-    camera(std::make_unique<SmoothCamera>(glm::vec3(0.00, 0.0, -5.00001), glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, 1.0, 0.0)))
-{
+App::App(void)
+    : window(SCREEN_WIDTH, SCREEN_HEIGHT, "Ima title"),
+      last_render_time(0),
+      init_ok(false),
+      program(),
+      cur_camera_acceleration(CAMERA_ACCELERATION),
+      camera(std::make_unique<SmoothCamera>(glm::vec3(0.00, 0.0, -5.00001),
+                                            glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, 1.0, 0.0))) {
     glfwSetKeyCallback(window.handle, key_callback);
     glfwSetFramebufferSizeCallback(window.handle, framebuffer_size_callback);
     glfwSetCursorPosCallback(window.handle, cursor_position_callback);
@@ -33,8 +31,7 @@ App::App(void) :
     glViewport(0, 0, window.width, window.height);
 }
 
-bool App::Initialize(std::string vertex_path, std::string fragment_path)
-{
+bool App::Initialize(std::string vertex_path, std::string fragment_path) {
     assert(!init_ok);
 
     if (!InitGL(vertex_path, fragment_path)) {
@@ -54,8 +51,7 @@ bool App::Initialize(std::string vertex_path, std::string fragment_path)
     return init_ok;
 }
 
-bool App::InitGL(std::string vertex_path, std::string fragment_path)
-{
+bool App::InitGL(std::string vertex_path, std::string fragment_path) {
     program.reset(new GLProgram());
 
     std::unique_ptr<GLShader> vertex(new GLShader(GL_VERTEX_SHADER));
@@ -84,16 +80,14 @@ bool App::InitGL(std::string vertex_path, std::string fragment_path)
     return true;
 }
 
-void App::OnResize(int width, int height)
-{
+void App::OnResize(int width, int height) {
     glViewport(0, 0, width, height);
     window.width = width;
     window.height = height;
     window.ratio = width / static_cast<float>(height);
 }
 
-void App::OnKey(int key, int scancode, int action, int mode)
-{
+void App::OnKey(int key, int scancode, int action, int mode) {
     if (action == GLFW_PRESS) {
         keys.PressKey(key);
     } else if (action == GLFW_RELEASE) {
@@ -101,8 +95,7 @@ void App::OnKey(int key, int scancode, int action, int mode)
     }
 }
 
-void App::OnCursorPos(double xpos, double ypos)
-{
+void App::OnCursorPos(double xpos, double ypos) {
     static const float ROT_COEFF = MOUSE_SENSITIVITY_PER_SEC * last_render_time;
     static double old_xpos = 0.5;
     static double old_ypos = 0.5;
@@ -111,13 +104,9 @@ void App::OnCursorPos(double xpos, double ypos)
     old_ypos = ypos;
 }
 
-void App::OnLoop()
-{
-    ProcessInput();
-}
+void App::OnLoop() { ProcessInput(); }
 
-void App::OnRender()
-{
+void App::OnRender() {
     assert(quad);
     assert(camera);
 
@@ -136,26 +125,23 @@ void App::OnRender()
 
     static float t = 0;
     last_render_time = elapsed_time - t;
-    t  = elapsed_time;
+    t = elapsed_time;
     char s[50];
-    sprintf(s, "%.2f fps (%.4f sec/frame)",
-                           1.0 / last_render_time,
-                           last_render_time);
+    sprintf(s, "%.2f fps (%.4f sec/frame)", 1.0 / last_render_time, last_render_time);
 
     glfwSetWindowTitle(window.handle, s);
 
     if (last_render_time < 1e-6) last_render_time = 1e-6;
 }
 
-int App::OnExecute(std::string vertex_path, std::string fragment_path)
-{
+int App::OnExecute(std::string vertex_path, std::string fragment_path) {
     if (!Initialize(vertex_path, fragment_path)) {
         return EXIT_FAILURE;
     }
     int time_start, time_delta;
     while (!glfwWindowShouldClose(window.handle)) {
         time_start = static_cast<int>(1000 * glfwGetTime());
-        glfwPollEvents(); // do callbacks execute in this thread?
+        glfwPollEvents();  // do callbacks execute in this thread?
         OnLoop();
         OnRender();
 
@@ -165,10 +151,9 @@ int App::OnExecute(std::string vertex_path, std::string fragment_path)
         }
     }
     return EXIT_SUCCESS;
-} 
+}
 
-void App::ProcessInput()
-{
+void App::ProcessInput() {
     float ROLL_ANGLE = ROLL_ANGLE_PER_SEC * last_render_time;
     if (keys[GLFW_KEY_ESCAPE]) {
         glfwSetWindowShouldClose(window.handle, GL_TRUE);
@@ -194,4 +179,3 @@ void App::ProcessInput()
     keys.ClearNewKeys();
     camera->Update();
 }
-

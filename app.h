@@ -11,8 +11,7 @@
 #include "shader.h"
 #include "window.h"
 
-class App
-{
+class App {
     Window window;
 
     float last_render_time;
@@ -36,13 +35,13 @@ class App
     void OnRender();
     void OnCleanup();
 
-    App(const App &other) = delete;
-    App& operator= (const App &other) = delete;
+    App(const App& other) = delete;
+    App& operator=(const App& other) = delete;
 
     App();
 
 public:
-    static App &GetInstance() {
+    static App& GetInstance() {
         static App instance;
         return instance;
     }

@@ -1,16 +1,16 @@
 #pragma once
 
+#include <memory>
+
 #include "camera.h"
 #include "defines.h"
 #include "logger.h"
 
-#include <memory>
-
-class GLShader
-{
+class GLShader {
 protected:
     GLuint shader;
     GLenum type;
+
 public:
     GLShader(GLenum type);
     GLShader(const char *filename, GLenum type);
@@ -19,11 +19,10 @@ public:
     bool LoadFromFile(const char *filename);
     bool Load(const char *source);
 
-    GLuint GetId() const  { return shader; }
+    GLuint GetId() const { return shader; }
 };
 
-class GLProgram
-{
+class GLProgram {
 protected:
     GLuint program;
     bool active;
@@ -33,7 +32,8 @@ protected:
     std::unique_ptr<GLShader> fragment;
 
     GLProgram(const GLProgram &a) = delete;
-    GLProgram &operator= (const GLProgram &a) = delete;
+    GLProgram &operator=(const GLProgram &a) = delete;
+
 public:
     GLProgram(void);
     ~GLProgram(void);
@@ -41,7 +41,7 @@ public:
     bool LoadVertexShader(GLShader *vertex);
     bool LoadFragmentShader(GLShader *fragment);
 
-    void UnloadVertexShader()   { vertex.reset();   }
+    void UnloadVertexShader() { vertex.reset(); }
     void UnloadFragmentShader() { fragment.reset(); }
 
     bool Link();
@@ -52,7 +52,8 @@ public:
     GLint GetAttribute(const char *name);
     GLint GetUniform(const char *name);
 
-    bool SetVertexAttrib(const char *name, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer);
+    bool SetVertexAttrib(const char *name, GLint size, GLenum type, GLboolean normalized,
+                         GLsizei stride, const GLvoid *pointer);
     bool DisableVertexAttrib(const char *name);
     void DrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
 

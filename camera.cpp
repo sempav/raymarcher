@@ -8,9 +8,7 @@ Camera::Camera(glm::vec3 pos, glm::vec3 dir, glm::vec3 up) {
 
 Camera::~Camera() {}
 
-glm::mat4 Camera::GetViewMatrix() {
-    return glm::lookAt(pos, pos + dir, up);
-}
+glm::mat4 Camera::GetViewMatrix() { return glm::lookAt(pos, pos + dir, up); }
 
 void Camera::MoveLoc(float x, float y, float z, float distance) {
     glm::vec3 right = GetRight();
@@ -31,17 +29,13 @@ void Camera::RotateLoc(float deg, float x, float y, float z) {
     SetUp(new_up);
 }
 
-void SmoothCamera::Accelerate(glm::vec3 amount)
-{
-    speed += amount;
-}
+void SmoothCamera::Accelerate(glm::vec3 amount) { speed += amount; }
 
-void SmoothCamera::Update()
-{
+void SmoothCamera::Update() {
     MoveLoc(speed.x, speed.y, speed.z, 1);
     for (int i = 0; i < 3; i++)
         if (speed[i] > 0)
             speed[i] = speed[i] - CAMERA_SLOWDOWN < 0 ? 0 : speed[i] - CAMERA_SLOWDOWN;
-        else 
+        else
             speed[i] = speed[i] + CAMERA_SLOWDOWN > 0 ? 0 : speed[i] + CAMERA_SLOWDOWN;
 }

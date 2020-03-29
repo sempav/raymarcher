@@ -2,12 +2,11 @@
 
 #include "mesh.h"
 
-class Quad
-{
+class Quad {
     Mesh mesh;
-    
+
 public:
-    Quad(): mesh() { }
+    Quad() : mesh() {}
     bool LoadVBO();
     void Draw(GLProgram* program);
 };

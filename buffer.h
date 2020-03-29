@@ -3,8 +3,7 @@
 #include "defines.h"
 #include "logger.h"
 
-class GLBuffer
-{
+class GLBuffer {
     GLuint name;
     GLenum target;
 

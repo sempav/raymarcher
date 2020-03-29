@@ -5,9 +5,7 @@
 
 #include <string>
 
-
-struct Window
-{
+struct Window {
     GLFWwindow *handle;
     int width;
     int height;

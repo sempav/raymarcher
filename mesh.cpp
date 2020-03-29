@@ -1,23 +1,21 @@
 #include "mesh.h"
 
-Mesh::Mesh(void) : 
-    vertices(), normals(), indices(),
-    vbo_vertices(GL_ARRAY_BUFFER),
-    vbo_normals(GL_ARRAY_BUFFER),
-    ibo_indices(GL_ELEMENT_ARRAY_BUFFER),
-    vbo_loaded(false)
-{
-}
+Mesh::Mesh(void)
+    : vertices(),
+      normals(),
+      indices(),
+      vbo_vertices(GL_ARRAY_BUFFER),
+      vbo_normals(GL_ARRAY_BUFFER),
+      ibo_indices(GL_ELEMENT_ARRAY_BUFFER),
+      vbo_loaded(false) {}
 
-Mesh::~Mesh(void) 
-{
+Mesh::~Mesh(void) {
     if (!vbo_vertices.Empty()) vbo_vertices.Delete();
     if (!vbo_normals.Empty()) vbo_normals.Delete();
     if (!ibo_indices.Empty()) ibo_indices.Delete();
 }
 
-bool Mesh::LoadVBO()
-{
+bool Mesh::LoadVBO() {
     if (vertices.empty() || indices.empty()) {
         logger.Write("Error loading VBO: vertex data not assigned.\n");
         return false;
@@ -29,7 +27,8 @@ bool Mesh::LoadVBO()
 
     logger.Write("vbo_vertices\n");
     vbo_vertices.Generate();
-    if (!vbo_vertices.BufferData(vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW)) {
+    if (!vbo_vertices.BufferData(vertices.size() * sizeof(GLfloat), vertices.data(),
+                                 GL_STATIC_DRAW)) {
         logger.Write("Can't load vertex buffer.\n");
         vbo_vertices.Delete();
         return false;
@@ -39,7 +38,8 @@ bool Mesh::LoadVBO()
     if (!normals.empty()) {
         logger.Write("vbo_normals\n");
         vbo_normals.Generate();
-        if (!vbo_normals.BufferData(normals.size() * sizeof(GLfloat), normals.data(), GL_STATIC_DRAW)) {
+        if (!vbo_normals.BufferData(normals.size() * sizeof(GLfloat), normals.data(),
+                                    GL_STATIC_DRAW)) {
             logger.Write("Can't load normal buffer.\n");
             vbo_normals.Delete();
             return false;
@@ -60,8 +60,7 @@ bool Mesh::LoadVBO()
     return true;
 }
 
-void Mesh::Draw(GLProgram *program)
-{
+void Mesh::Draw(GLProgram *program) {
     if (!vbo_loaded) {
         logger.Write("Error drawing mesh: VBO not loaded.\n");
         return;
@@ -84,12 +83,10 @@ void Mesh::Draw(GLProgram *program)
     ibo_indices.Unbind();
 
     program->DisableVertexAttrib("coord");
-    if (!vbo_normals.Empty())
-        program->DisableVertexAttrib("normal");
+    if (!vbo_normals.Empty()) program->DisableVertexAttrib("normal");
 }
 
-void Mesh::SetVertices(GLfloat *vertices, int size)
-{
+void Mesh::SetVertices(GLfloat *vertices, int size) {
     logger.Write("assigning vertices..");
     if (!this->vertices.empty()) {
         logger.Write("Error: overwriting mesh vertices.\n");
@@ -101,8 +98,7 @@ void Mesh::SetVertices(GLfloat *vertices, int size)
     // logger.LogVector(this->vertices);
 }
 
-void Mesh::SetNormals(GLfloat *normals, int size)
-{
+void Mesh::SetNormals(GLfloat *normals, int size) {
     logger.Write("assigning normals..");
     if (!this->normals.empty()) {
         logger.Write("Error: overwriting mesh normals.\n");
@@ -114,8 +110,7 @@ void Mesh::SetNormals(GLfloat *normals, int size)
     // logger.LogVector(this->normals);
 }
 
-void Mesh::SetIndices(GLuint *indices, int size)
-{
+void Mesh::SetIndices(GLuint *indices, int size) {
     logger.Write("assigning indices..");
     if (!this->indices.empty()) {
         logger.Write("Error: overwriting mesh indices.\n");
@@ -127,16 +122,14 @@ void Mesh::SetIndices(GLuint *indices, int size)
     // logger.LogVector(this->indices);
 }
 
-void Mesh::FreeVertices()
-{
+void Mesh::FreeVertices() {
     if (!vertices.empty()) {
         vertices.clear();
     } else
         logger.Write("Warning: trying to free an empty vertex array.\n");
 }
 
-void Mesh::FreeIndices()
-{
+void Mesh::FreeIndices() {
     if (!indices.empty()) {
         indices.clear();
     } else
