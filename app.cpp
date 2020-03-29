@@ -17,7 +17,7 @@ void cursor_position_callback(GLFWwindow*, double xpos, double ypos) {
 
 App::App(void)
     : window(SCREEN_WIDTH, SCREEN_HEIGHT, "Ima title"),
-      last_render_time(0),
+      last_frame_duration(0),
       init_ok(false),
       program(),
       cur_camera_acceleration(CAMERA_ACCELERATION),
@@ -96,7 +96,7 @@ void App::OnKey(int key, int scancode, int action, int mode) {
 }
 
 void App::OnCursorPos(double xpos, double ypos) {
-    static const float ROT_COEFF = MOUSE_SENSITIVITY_PER_SEC * last_render_time;
+    static const float ROT_COEFF = MOUSE_SENSITIVITY_PER_SEC * last_frame_duration.count();
     static double old_xpos = 0.5;
     static double old_ypos = 0.5;
     camera->RotateLoc(ROT_COEFF, old_ypos - ypos, old_xpos - xpos, 0.0f);
@@ -107,8 +107,8 @@ void App::OnCursorPos(double xpos, double ypos) {
 void App::OnLoop() { ProcessInput(); }
 
 void App::OnRender() {
-    assert(quad);
-    assert(camera);
+    static auto prev_time = std::chrono::steady_clock::now();
+    auto current_time = std::chrono::steady_clock::now();
 
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -116,45 +116,46 @@ void App::OnRender() {
     program->Use();
 
     program->SetCamera(*camera, window.ratio);
-    float elapsed_time = glfwGetTime();
-    program->SetUniform1f("elapsed_time", elapsed_time);
+    program->SetUniform1f("elapsed_time",
+                          std::chrono::duration<float>(current_time.time_since_epoch()).count());
 
     quad->Draw(program.get());
 
     glfwSwapBuffers(window.handle);
 
-    static float t = 0;
-    last_render_time = elapsed_time - t;
-    t = elapsed_time;
+    last_frame_duration = std::chrono::duration<float>(current_time - prev_time);
+    prev_time = current_time;
+
+    fps_counter.RegisterFrame(last_frame_duration);
     char s[50];
-    sprintf(s, "%.2f fps (%.4f sec/frame)", 1.0 / last_render_time, last_render_time);
-
+    sprintf(s, "%.1f fps (%.4f sec/frame)", fps_counter.GetAvgFps(),
+            fps_counter.GetAvgTime().count());
     glfwSetWindowTitle(window.handle, s);
-
-    if (last_render_time < 1e-6) last_render_time = 1e-6;
 }
 
 int App::OnExecute(std::string vertex_path, std::string fragment_path) {
     if (!Initialize(vertex_path, fragment_path)) {
         return EXIT_FAILURE;
     }
-    int time_start, time_delta;
+    constexpr auto ms_per_frame = std::chrono::duration<double, std::milli>(1000) / FRAMERATE;
     while (!glfwWindowShouldClose(window.handle)) {
-        time_start = static_cast<int>(1000 * glfwGetTime());
-        glfwPollEvents();  // do callbacks execute in this thread?
+        auto time_start = std::chrono::steady_clock::now();
+
+        glfwPollEvents();
         OnLoop();
         OnRender();
 
-        time_delta = static_cast<int>(1000 * glfwGetTime()) - time_start;
-        if (time_delta < MSEC_PER_FRAME) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(MSEC_PER_FRAME - time_delta));
+        auto time_end = std::chrono::steady_clock::now();
+        auto time_delta = std::chrono::duration<double, std::milli>(time_end - time_start);
+        if (time_delta < ms_per_frame) {
+            std::this_thread::sleep_for(ms_per_frame - time_delta);
         }
     }
     return EXIT_SUCCESS;
 }
 
 void App::ProcessInput() {
-    float ROLL_ANGLE = ROLL_ANGLE_PER_SEC * last_render_time;
+    float ROLL_ANGLE = ROLL_ANGLE_PER_SEC * last_frame_duration.count();
     if (keys[GLFW_KEY_ESCAPE]) {
         glfwSetWindowShouldClose(window.handle, GL_TRUE);
     }

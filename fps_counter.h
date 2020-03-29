@@ -1,25 +1,33 @@
+#include <chrono>
+#include <numeric>
 #include <vector>
 
 class FpsCounter {
-    int buflen;
-    std::vector<float> times;
-    int cur;
-
-    static constexpr int DEFAULT_LEN = 10;
-    static constexpr float DEFAULT_TIME = 1.0 / 30;
-
 public:
-    FpsCounter(int buflen = DEFAULT_LEN) : buflen(buflen), times(buflen, DEFAULT_TIME) {}
-    float GetAvgFps() { return 1.0 / GetAvgTime(); }
-    float GetAvgTime() {
-        float res = 0.0f;
-        for (float f : times) {
-            res += f;
+    using Duration = std::chrono::duration<float>;
+
+    FpsCounter(int window_size = 30) : times(window_size) {}
+
+    float GetAvgFps() const { return 1.0 / GetAvgTime().count(); }
+
+    Duration GetAvgTime() const {
+        if (times_changed_since_last_query) {
+            cached_avg_time = std::accumulate(begin(times), end(times), Duration(0)) / times.size();
+            times_changed_since_last_query = false;
         }
-        return res / buflen;
+        return cached_avg_time;
     }
-    void AddFrame(float time) {
-        times[cur] = time;
-        cur = (cur + 1) % buflen;
+
+    void RegisterFrame(std::chrono::duration<float> time) {
+        times_changed_since_last_query = true;
+        times[current_index] = time;
+        current_index = (current_index + 1) % times.size();
     }
+
+private:
+    std::vector<std::chrono::duration<float>> times;
+    int current_index = 0;
+
+    mutable bool times_changed_since_last_query = true;
+    mutable Duration cached_avg_time;
 };

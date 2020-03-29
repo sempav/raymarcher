@@ -34,8 +34,9 @@ void SmoothCamera::Accelerate(glm::vec3 amount) { speed += amount; }
 void SmoothCamera::Update() {
     MoveLoc(speed.x, speed.y, speed.z, 1);
     for (int i = 0; i < 3; i++)
-        if (speed[i] > 0)
+        if (speed[i] > 0) {
             speed[i] = speed[i] - CAMERA_SLOWDOWN < 0 ? 0 : speed[i] - CAMERA_SLOWDOWN;
-        else
+        } else {
             speed[i] = speed[i] + CAMERA_SLOWDOWN > 0 ? 0 : speed[i] + CAMERA_SLOWDOWN;
+        }
 }

@@ -3,8 +3,11 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <chrono>
+
 #include "camera.h"
 #include "defines.h"
+#include "fps_counter.h"
 #include "keyboard.h"
 #include "logger.h"
 #include "quad.h"
@@ -12,16 +15,23 @@
 #include "window.h"
 
 class App {
-    Window window;
+public:
+    static App& GetInstance() {
+        static App instance;
+        return instance;
+    }
 
-    float last_render_time;
-    bool init_ok;
+    int OnExecute(std::string vertex_path, std::string fragment_path);
 
-    std::unique_ptr<GLProgram> program;
-    std::unique_ptr<Quad> quad;
+    KeyboardListener keys;
 
-    float cur_camera_acceleration;
-    std::unique_ptr<SmoothCamera> camera;
+    friend void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    friend void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+
+private:
+    App();
+    App(const App& other) = delete;
+    App& operator=(const App& other) = delete;
 
     bool Initialize(std::string vertex_path, std::string fragment_path);
     bool InitGL(std::string vertex_path, std::string fragment_path);
@@ -35,22 +45,17 @@ class App {
     void OnRender();
     void OnCleanup();
 
-    App(const App& other) = delete;
-    App& operator=(const App& other) = delete;
+    Window window;
 
-    App();
+    FpsCounter fps_counter;
+    std::chrono::duration<float> last_frame_duration;
+    bool init_ok;
 
-public:
-    static App& GetInstance() {
-        static App instance;
-        return instance;
-    }
+    std::unique_ptr<GLProgram> program;
+    std::unique_ptr<Quad> quad;
 
-    int OnExecute(std::string vertex_path, std::string fragment_path);
+    float cur_camera_acceleration;
+    std::unique_ptr<SmoothCamera> camera;
 
-    KeyboardListener keys;
-
-    friend void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-    friend void framebuffer_size_callback(GLFWwindow* window, int width, int height);
     friend void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 };
