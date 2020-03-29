@@ -3,20 +3,27 @@
 #include <chrono>
 #include <thread>
 
-void error_callback(int error, const char* description);
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
+void key_callback(GLFWwindow*, int key, int scancode, int action, int mods)
+{
+    App::GetInstance().OnKey(key, scancode, action, mods);
+}
 
-App *App::instance = nullptr;
+void framebuffer_size_callback(GLFWwindow*, int width, int height)
+{
+    App::GetInstance().OnResize(width, height);
+}
+
+void cursor_position_callback(GLFWwindow*, double xpos, double ypos)
+{
+    App::GetInstance().OnCursorPos(xpos, ypos);
+}
 
 App::App(void) :
     window(SCREEN_WIDTH, SCREEN_HEIGHT, "Ima title"), 
     last_render_time(0), init_ok(false),
     program(),
-    quad(NULL),
     cur_camera_acceleration(CAMERA_ACCELERATION),
-    camera(new SmoothCamera(glm::vec3(0.00, 0.0, -5.00001), glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, 1.0, 0.0)))
+    camera(std::make_unique<SmoothCamera>(glm::vec3(0.00, 0.0, -5.00001), glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, 1.0, 0.0)))
 {
     glfwSetKeyCallback(window.handle, key_callback);
     glfwSetFramebufferSizeCallback(window.handle, framebuffer_size_callback);
@@ -24,16 +31,6 @@ App::App(void) :
 
     glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glViewport(0, 0, window.width, window.height);
-}
-
-App::~App(void)
-{
-    if (init_ok) {
-        logger.Write("App destroyed.\n");
-        delete quad;
-        delete camera;
-    }
-    glfwTerminate();
 }
 
 bool App::Initialize(std::string vertex_path, std::string fragment_path)
@@ -44,12 +41,10 @@ bool App::Initialize(std::string vertex_path, std::string fragment_path)
         return false;
     }
 
-    quad = new Quad();
+    quad = std::make_unique<Quad>();
     if (!quad->LoadVBO()) {
-        delete quad;
-        quad = NULL;
-        delete camera;
-        camera = NULL;
+        quad.reset();
+        camera.reset();
         program.reset();
 
         throw std::runtime_error("Failed to load quad VBO");
@@ -87,17 +82,6 @@ bool App::InitGL(std::string vertex_path, std::string fragment_path)
 
     logger.Write("Program loaded.\n");
     return true;
-}
-
-bool App::InitObjects()
-{
-    logger.Write("Initializing objects..\n");
-    logger.Write("All objects initialized.\n");
-    return true;
-}
-
-void App::OnEvent()
-{
 }
 
 void App::OnResize(int width, int height)
@@ -166,7 +150,7 @@ void App::OnRender()
 int App::OnExecute(std::string vertex_path, std::string fragment_path)
 {
     if (!Initialize(vertex_path, fragment_path)) {
-        return -1;
+        return EXIT_FAILURE;
     }
     int time_start, time_delta;
     while (!glfwWindowShouldClose(window.handle)) {
@@ -180,7 +164,7 @@ int App::OnExecute(std::string vertex_path, std::string fragment_path)
             std::this_thread::sleep_for(std::chrono::milliseconds(MSEC_PER_FRAME - time_delta));
         }
     }
-    return 0;
+    return EXIT_SUCCESS;
 } 
 
 void App::ProcessInput()

@@ -1,28 +1,18 @@
 #pragma once
 
-//#define GLM_FORCE_RADIANS
-//#include <glm/glm.hpp>
-//#include "glm/gtc/matrix_transform.hpp"
-//#include "glm/gtc/type_ptr.hpp"
-//#include <glm/gtx/rotate_vector.hpp>
+inline const char *FILE_LOG = "log/main.log";
+inline const char *FILE_COMPILE_ERRORS = "log/errors.log";
 
-extern const char *FILE_GEOM;
-extern const char *FILE_LOG;
-extern const char *FILE_COMPILE_ERRORS;
+const float CAMERA_ACCELERATION = 0.04;
+const float CAMERA_SLOWDOWN = 0.9 * CAMERA_ACCELERATION;
+const float CAMERA_MAX_SPEED = 0.14f;
 
+const float STRAFE_SENSITIVITY_PER_SEC = 0.002f;
+const float MOUSE_SENSITIVITY_PER_SEC  = 0.01f;
+const float ROLL_ANGLE_PER_SEC         = 1.0f;
 
-extern const float CAMERA_ACCELERATION;
-extern const float CAMERA_SLOWDOWN;
-extern const float CAMERA_MAX_SPEED;
+const int SCREEN_WIDTH  = 1000;
+const int SCREEN_HEIGHT = 800;
 
-extern const float STRAFE_SENSITIVITY_PER_SEC;
-extern const float MOUSE_SENSITIVITY_PER_SEC;
-extern const float ROLL_ANGLE_PER_SEC;
-
-extern const int SCREEN_WIDTH;
-extern const int SCREEN_HEIGHT;
-
-extern const int FRAMERATE;
-extern const int MSEC_PER_FRAME;
-
-float sgn(float a);
+const int FRAMERATE = 60;
+const int MSEC_PER_FRAME = 1000.0 / FRAMERATE;

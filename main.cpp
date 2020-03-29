@@ -3,26 +3,12 @@
 #include "app.h"
 #include "shader.h"
 
+#include <cstdlib>
 #include <iostream>
 
-void error_callback(int error, const char* description)
+void error_callback(int error, const char *description)
 {
-    fprintf(stderr, "Error %d: %s", error, description);
-}
-
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    App::GetInstance().OnKey(key, scancode, action, mods);
-}
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    App::GetInstance().OnResize(width, height);
-}
-
-void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
-{
-    App::GetInstance().OnCursorPos(xpos, ypos);
+    fprintf(stderr, "Error %d (0x%x): %s\n", error, error, description);
 }
 
 bool parse_args(int argc, char **argv,
@@ -62,6 +48,7 @@ int main(int argc, char **argv)
     if (!glfwInit()) {
         return EXIT_FAILURE;
     }
+    std::atexit(glfwTerminate);
 
     std::string vertex_path, fragment_path;
     if (!parse_args(argc, argv, vertex_path, fragment_path)) {
@@ -69,14 +56,12 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    App &app = App::GetInstance();
-
-    logger.LogSystemInfo();
-
     try {
+        App &app = App::GetInstance();
+        logger.LogSystemInfo();
         return app.OnExecute(vertex_path, fragment_path);
-    } catch(const std::exception &e) {
+    } catch (const std::exception &e) {
         std::cerr << "Exception occurred: " << e.what() << std::endl;
-        std::cerr << "Program terminated." << std::endl;
+        return EXIT_FAILURE;
     }
 }

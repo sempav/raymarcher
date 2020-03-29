@@ -1,12 +1,12 @@
 CXX=g++
-CXXFLAGS= -g -std=c++14 -O2 -pedantic -Wall -Wextra -Wcast-align \
+CXXFLAGS= -g -std=c++1z -O2 -pedantic -Wall -Wextra -Wcast-align \
 		  -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 \
 		  -Winit-self -Wlogical-op -Wmissing-include-dirs -Wnoexcept \
 		  -Wold-style-cast -Woverloaded-virtual -Wredundant-decls \
 		  -Wsign-conversion -Wsign-promo -Wstrict-null-sentinel \
 		  -Wstrict-overflow=5 -Wswitch-default -Wundef \
 		  -Wno-unused-parameter -Wno-old-style-cast -Wno-sign-conversion
-CXXFLAGS+= -MMD -MP -DGLM_FORCE_RADIANS
+CXXFLAGS+= -MMD -MP -DGLM_FORCE_RADIANS -DGLM_ENABLE_EXPERIMENTAL
 LDLIBS=-lGL -lGLU -lGLEW -lglfw
 
 TARGET=$(BIN_DIR)/main

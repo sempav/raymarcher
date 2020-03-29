@@ -11,31 +11,24 @@
 #include "shader.h"
 #include "window.h"
 
-
 class App
 {
-    static App *instance;
-
     Window window;
 
     float last_render_time;
     bool init_ok;
 
-
     std::unique_ptr<GLProgram> program;
-
-    Quad *quad;
+    std::unique_ptr<Quad> quad;
 
     float cur_camera_acceleration;
-    SmoothCamera *camera;
+    std::unique_ptr<SmoothCamera> camera;
 
     bool Initialize(std::string vertex_path, std::string fragment_path);
     bool InitGL(std::string vertex_path, std::string fragment_path);
-    bool InitObjects();
 
     void ProcessInput();
 
-    void OnEvent();
     void OnResize(int width, int height);
     void OnKey(int key, int scancode, int action, int mode);
     void OnCursorPos(double xpos, double ypos);
@@ -47,21 +40,11 @@ class App
     App& operator= (const App &other) = delete;
 
     App();
-    ~App();
 
 public:
     static App &GetInstance() {
-        if (!instance) {
-            instance = new App();
-        }
-        return *instance;
-    }
-
-    static void ResetInstance() {
-        if (instance) {
-            delete instance;
-            instance = nullptr;
-        }
+        static App instance;
+        return instance;
     }
 
     int OnExecute(std::string vertex_path, std::string fragment_path);
