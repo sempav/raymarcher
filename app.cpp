@@ -17,7 +17,6 @@ void cursor_position_callback(GLFWwindow*, double xpos, double ypos) {
 
 App::App(void)
     : window(SCREEN_WIDTH, SCREEN_HEIGHT, "Ima title"),
-      last_frame_duration(0),
       init_ok(false),
       program(),
       cur_camera_acceleration(CAMERA_ACCELERATION),
@@ -96,7 +95,7 @@ void App::OnKey(int key, int scancode, int action, int mode) {
 }
 
 void App::OnCursorPos(double xpos, double ypos) {
-    static const float ROT_COEFF = MOUSE_SENSITIVITY_PER_SEC * last_frame_duration.count();
+    static const float ROT_COEFF = MOUSE_SENSITIVITY_PER_SEC * fps_counter.GetLastTime().count();
     static double old_xpos = 0.5;
     static double old_ypos = 0.5;
     camera->RotateLoc(ROT_COEFF, old_ypos - ypos, old_xpos - xpos, 0.0f);
@@ -123,10 +122,9 @@ void App::OnRender() {
 
     glfwSwapBuffers(window.handle);
 
-    last_frame_duration = std::chrono::duration<float>(current_time - prev_time);
+    fps_counter.RegisterFrame(current_time - prev_time);
     prev_time = current_time;
 
-    fps_counter.RegisterFrame(last_frame_duration);
     char s[50];
     sprintf(s, "%.1f fps (%.4f sec/frame)", fps_counter.GetAvgFps(),
             fps_counter.GetAvgTime().count());
@@ -155,7 +153,7 @@ int App::OnExecute(std::string vertex_path, std::string fragment_path) {
 }
 
 void App::ProcessInput() {
-    float ROLL_ANGLE = ROLL_ANGLE_PER_SEC * last_frame_duration.count();
+    float ROLL_ANGLE = ROLL_ANGLE_PER_SEC * fps_counter.GetLastTime().count();
     if (keys[GLFW_KEY_ESCAPE]) {
         glfwSetWindowShouldClose(window.handle, GL_TRUE);
     }

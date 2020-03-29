@@ -48,7 +48,6 @@ private:
     Window window;
 
     FpsCounter fps_counter;
-    std::chrono::duration<float> last_frame_duration;
     bool init_ok;
 
     std::unique_ptr<GLProgram> program;

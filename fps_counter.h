@@ -18,10 +18,12 @@ public:
         return cached_avg_time;
     }
 
+    Duration GetLastTime() const { return times[current_index]; }
+
     void RegisterFrame(std::chrono::duration<float> time) {
         times_changed_since_last_query = true;
-        times[current_index] = time;
         current_index = (current_index + 1) % times.size();
+        times[current_index] = time;
     }
 
 private:
